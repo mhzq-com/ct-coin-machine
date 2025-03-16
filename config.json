@@ -1,0 +1,13 @@
+{
+    "service": {
+    "token": "f1b30315391805fc222d8dc5ba0f1f54faf47744",
+    "url": "citymedia.synology.me",
+    "port": 8080,
+    "socketPort": 40005,
+    "companyId": 1
+    }
+    , "dbHost": "127.0.0.1"
+    , "dbUser": "root"
+    , "dbPassword": ""
+    , "dbName": "coin"
+}

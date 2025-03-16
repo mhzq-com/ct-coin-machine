@@ -1,0 +1,177 @@
+.page{
+    margin:0px;
+    border:1px solid #80808070;
+    box-sizing:border-box;
+    /* padding:0.5in; */
+    position:relative;
+}
+
+ 
+    @page {
+        size:a4;
+        margin-top: 100px;
+        margin-bottom: 100px;
+        margin-left: 0;
+        margin-right: 0;    
+        font-size:0.5rem;
+    }
+
+
+
+    .preview{
+        width:271mm;
+        position:relative;
+        margin:0px auto;
+    }
+    .preview table tr:nth-child(2n) td, table tr:nth-child(2n) th {
+        background:initial;
+
+    }
+    table tr td{
+        border-bottom:1px solid gray;    
+    }
+    
+    .preview:before{
+        content:"";
+        transform-origin:right top;
+        transform:translate(-100%) rotate(-90deg);
+        position:absolute;
+        left:-5px;
+    }
+
+    .preview #sampleContainer{
+        position:absolute;
+        top:0;
+        bottom:0;
+        overflow:hidden;
+        text-align:center;
+    }
+
+    .preview #sampleContainer span{
+        width:calc(100%/8);
+        font-size:36px;
+        display:inline-block;
+        height:100px;
+        transform:rotate(45deg);
+        opacity:0.1;
+    }
+
+    
+
+#dl-menu{
+    display:none;
+}
+#top {
+    display:none;
+}
+@media print{
+    body{
+        
+        background: transparent;
+    }
+
+    body > div#bodywrapper{
+        
+        background:transparent;
+
+        margin-bottom:0px;
+    }
+    .page{
+        border:0px;
+    }
+
+    .logo{
+        margin-left:50px;
+    }
+
+    
+    footer{
+        
+        background:transparent;
+        color:black;
+    }
+    
+    
+    h1, h2 {
+        counter-increment: allpage;
+        page-break-after: avoid;
+        page-break-before: avoid;
+    }
+    
+
+    .print-page-break-after{
+        counter-increment: allpage;
+        page-break-after: always;
+        page-break-before: avoid;
+    }
+
+    .print-page-break-before{
+        counter-increment: allpage;
+        page-break-after: avoid;
+        page-break-before: always;
+    }
+
+    .no-print{
+        display:none;
+    }
+
+
+
+
+    body{
+
+        background: white;
+    }
+    
+    
+
+    
+     @page {
+        counter-increment: page;
+        counter-reset: page 1;
+        @bottom-left {
+            content: "Page " counter(page) " of " counter(pages);
+        }
+    }
+    /*
+
+    #page-number:after {
+        counter-increment: page;
+        content:counter(page);
+        display:block;
+        color:black;
+        width:50px;
+        height:50px;
+        position:relative;
+
+    }
+    
+    footer:after{
+        counter-increment: page;
+        content: counter(page);
+        left: 50px;
+        top: 0px;
+        white-space: nowrap;
+        z-index: 20px;
+        -moz-border-radius: 5px;
+        -moz-box-shadow: 0px 0px 4px #222;
+        background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+        background-image: -moz-linear-gradient(top, #eeeeee, #cccccc);
+        display:block;
+        color:black;
+        position:absolute;
+    }
+*/
+
+
+    .no-print{
+        display:none;
+    }
+
+   
+}
+.print.paper-a4{
+
+    border:1px solid black;
+
+}
