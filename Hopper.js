@@ -49,11 +49,11 @@ const HopperMode = {
     CoinCounting: "CoinCounting"
 };
 
-class HopperAgent extends EventEmitter{
+class HopperAgent extends EventEmitter {
     /**
      * @param ApplicationController controller
      */
-    constructor(controller){
+    constructor(controller) {
         super();
         this.controller = controller;
     }
@@ -213,73 +213,74 @@ class Hopper extends HopperAgent {
      * Drops a coin (to your witcher)
      */
     TossACoinToYourWitcher() {
+        return new Promise(async (resolve, reject) => {
+            try {
+                await this.SetMode(HopperMode.CoinCounting);
+            } catch (error) {
+                reject(error);
+                return;
+            }
 
 
+            function coinDrop() {
+                this.gpios.in3.writeSync(0);
+                this.gpios.motor.writeSync(0);
 
+                this.gpios.coinTrayLed.writeSync(1);
 
-        return new Promise((resolve, reject) => {
+                setTimeout(() => {
 
-            this.SetMode(HopperMode.CoinCounting).then(() => {
-
-                function coinDrop() {
-                    this.gpios.in3.writeSync(0);
-                    this.gpios.motor.writeSync(0);
-
-                    this.gpios.coinTrayLed.writeSync(1);
-
-                    setTimeout(() => {
-
-                        this.gpios.coinTrayLed.writeSync(0);
-                    }, 5000);
-
-                    if (this.motorTimeout !== undefined) {
-                        clearTimeout(this.motorTimeout);
-                        delete this.motorTimeout;
-                    }
-
-                    //this.removeListener("coinDrop", coinDrop);
-
-                    resolve(true);
-                }
-                //this.removeAllListeners("coinDrop");
-                //this.on("coinDrop", coinDrop);
-                this.once("coinDrop", coinDrop);
-
-                this.coinCounting = true;
-                this.gpios.in3.writeSync(1);
-                this.gpios.motor.writeSync(1);
-
-                if (this.in3Timeout !== undefined) {
-                    clearTimeout(this.in3Timeout);
-                    delete this.in3Timeout;
-                }
+                    this.gpios.coinTrayLed.writeSync(0);
+                }, 5000);
 
                 if (this.motorTimeout !== undefined) {
                     clearTimeout(this.motorTimeout);
                     delete this.motorTimeout;
                 }
 
-                this.in3Timeout = setTimeout(() => {
+                //this.removeListener("coinDrop", coinDrop);
 
-                    this.gpios.in3.writeSync(0);
+                resolve(true);
+            }
+            //this.removeAllListeners("coinDrop");
+            //this.on("coinDrop", coinDrop);
+            this.once("coinDrop", coinDrop);
 
-                }, 10);
+            this.coinCounting = true;
+            this.gpios.in3.writeSync(1);
+            this.gpios.motor.writeSync(1);
+
+            if (this.in3Timeout !== undefined) {
+                clearTimeout(this.in3Timeout);
+                delete this.in3Timeout;
+            }
+
+            if (this.motorTimeout !== undefined) {
+                clearTimeout(this.motorTimeout);
+                delete this.motorTimeout;
+            }
+
+            this.in3Timeout = setTimeout(() => {
+
+                this.gpios.in3.writeSync(0);
+
+            }, 10);
 
 
 
-                /** Runs max 30 seconds */
-                this.motorTimeout = setTimeout(() => {
-                    this.coinCounting = false;
-                    this.gpios.motor.writeSync(0);
+            /** Runs max 30 seconds */
+            this.motorTimeout = setTimeout(() => {
+                this.coinCounting = false;
+                this.gpios.motor.writeSync(0);
 
-                    /** There is no coin in the machine and we didn't noticed! So set to quantity zero + alert */
-                    this.emit("emptyAlert", {});
+                /** There is no coin in the machine and we didn't noticed! So set to quantity zero + alert */
+                this.emit("emptyAlert", {});
 
-                    reject(new Error("Nincs több érme a hopper motor szerint"));
+                reject(new Error("Nincs több érme a hopper motor szerint"));
 
-                }, 60000);
-            });
+            }, 60000);
         });
+
 
     }
 
@@ -290,17 +291,18 @@ class Hopper extends HopperAgent {
 
 
         return new Promise(async (resolve, reject) => {
-            try{
-                if(!ENABLE_GPIO){
-                    throw new Error("GPIO nincs engedélyezve a környezeti változók között");
+            try {
+                if (!ENABLE_GPIO) {
+                    reject(new Error("GPIO nincs engedélyezve a környezeti változók között"));
+                    return;
                 }
-                
+
                 await this.SetMode(HopperMode.Reset);
                 await this.SetMode(HopperMode.DirectSwitching);
 
                 //starts to count;
 
-                
+
                 this.gpios.motor.writeSync(1);
 
                 var coinCount = 0;
@@ -352,7 +354,7 @@ class Hopper extends HopperAgent {
 
                 resolve(true);
 
-            }catch(error){
+            } catch (error) {
                 reject(error);
             }
 
@@ -369,6 +371,10 @@ class Hopper extends HopperAgent {
      */
     SetMode(mode) {
         return new Promise((resolve, reject) => {
+            if (!ENABLE_GPIO) {
+                reject(new Error("GPIO nincs engedélyezve a környezeti változók között"));
+                return;
+            }
             switch (mode) {
                 case HopperMode.DirectSwitching:
                     this.gpios.in1.writeSync(0);

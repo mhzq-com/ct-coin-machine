@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import AuthReqPage from '../components/AuthReqPage'
 
 import io from "socket.io-client"
+import Input from '../components/html/form/Input';
 
 
 
@@ -34,14 +35,17 @@ const Home = function ({ user }) {
 
     const [info, setInfo] = useState(undefined);
     const [time, setTime] = useState(new Date().toLocaleString());
+    const [fillUpCount, setFillUpCount] = useState(1);
+
 
     useEffect(() => {
 
         var socket = io.connect();
 
         socket.on('timeChange', function (data) { //Megjelenítjük az időt, ha állítani kell meg tudja tenni
-            console.log(data);
+            // console.log(data);
             document.getElementById("time").innerHTML = new Date(data).toLocaleString();
+            // setTime(new Date(data).toLocaleDateString());
         });
 
         socket.on('coinCount', function (data) { //get button status from client
@@ -98,15 +102,15 @@ const Home = function ({ user }) {
     async function emptyHopper(e) {
         e.preventDefault();
 
-        try{
+        try {
             await UIkit.modal.confirm("Biztosan üríted?");
-        }catch(error){
+        } catch (error) {
             return;
         }
 
         var res = await fetch("api/emptyHopper", {
             method: "POST"
-            , headers : { 
+            , headers: {
                 "Content-Type": "application/json"
             }
             , credentials: 'include'
@@ -119,6 +123,96 @@ const Home = function ({ user }) {
             res = await res.json();
             UIkit.notification(res.message, { status: "danger" });
         }
+    }
+
+    async function fillUp(e) {
+        e.preventDefault();
+
+        var coinCount = parseInt(fillUpCount)
+
+        if (isNaN(coinCount)) {
+            alert(fillUpCount.toString() + " nem egy szám");
+            return;
+        }
+
+        try {
+            await UIkit.modal.confirm(`Biztosan feltölti ` + coinCount + ` darabszámmal?`);
+        } catch (error) {
+            return;
+        }
+
+
+
+        var res = await fetch("/api/fillUpHopper",
+            {
+                method: "POST"
+                , headers: { "Content-Type": "application/json" }
+                , credentials: "include"
+                , body: JSON.stringify({ coinCount: coinCount })
+            });
+        if(res.ok){
+            var data = await res.json();
+            
+            UIkit.notification(`Feltöltés utáni darabszám: ${data}`, {status: "success"});
+        } else {
+            res = await res.json();
+            UIkit.notification(`Feltöltés hiba: ${res.message}`, {status: "danger"});
+        }
+
+    }
+
+    async function update(e) {
+        e.preventDefault();
+
+        try {
+            await UIkit.modal.confirm(`Biztosan frissíti a rendszert?`);
+        } catch (error) {
+            return;
+        }
+
+
+
+        var res = await fetch("/api/update",
+            {
+                method: "POST"
+                , headers: { "Content-Type": "application/json" }
+                , credentials: "include"
+            });
+        if(res.ok){
+            
+            UIkit.notification(`Rendszerfrissítés sikeres! Újraindítás szükséges!`, {status: "success"});
+        } else {
+            res = await res.json();
+            UIkit.notification(`Rendszerfrissítés hiba: ${res.message}`, {status: "danger"});
+        }
+
+    }
+
+    async function restart(e) {
+        e.preventDefault();
+
+        try {
+            await UIkit.modal.confirm(`Biztosan újraindítja a rendszert?`);
+        } catch (error) {
+            return;
+        }
+
+
+
+        var res = await fetch("/api/restart",
+            {
+                method: "POST"
+                , headers: { "Content-Type": "application/json" }
+                , credentials: "include"
+            });
+        if(res.ok){
+            
+            UIkit.notification(`Újraindítás 5mp múlva!`, {status: "success"});
+        } else {
+            res = await res.json();
+            UIkit.notification(`Újraindítás hiba: ${res.message}`, {status: "danger"});
+        }
+
     }
 
     return (<AuthReqPage title={title} user={user}>
@@ -175,12 +269,12 @@ const Home = function ({ user }) {
                             <p className="card-text">Feltöltheted érmékkel az eszközt</p>
                             <div className="form-group row">
                                 <div className="uk-flex uk-flex-middle">
-                                    <input className="uk-input" type="number" value="1" min="1" max="1000" step="1" /><span>db</span>
-
+                                    {/* <input className="uk-input" type="number" value="1" min="1" max="1000" step="1" /><span>db</span> */}
+                                    <Input className="uk-input" type="number" value={fillUpCount} onChange={(e) => { setFillUpCount(e.target.value) }} />
                                 </div>
 
                             </div>
-                            <button id="fillUp" className="uk-button uk-button-success">Feltöltés</button>
+                            <button id="fillUp" className="uk-button uk-button-success" onClick={fillUp}>Feltöltés</button>
                         </div>
                     </div>
 
@@ -194,7 +288,7 @@ const Home = function ({ user }) {
                                 <div className="col">{info.package.version}</div>
 
                             </div>
-                            <button id="update" className="uk-button uk-button-secondary">Frissítés</button>
+                            <button id="update" className="uk-button uk-button-secondary" onClick={update}>Frissítés</button>
                         </div>
                     </div>
                     <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
@@ -203,7 +297,7 @@ const Home = function ({ user }) {
                             <h5 className="card-title">Újraindítás</h5>
                             <p className="card-text">Eszköz újraindítása</p>
 
-                            <button id="restart" className="uk-button uk-button-danger">Újraindítás</button>
+                            <button id="restart" className="uk-button uk-button-danger" onClick={restart}>Újraindítás</button>
                         </div>
                     </div>
 

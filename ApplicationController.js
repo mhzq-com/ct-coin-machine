@@ -1,13 +1,11 @@
 
 const Config = require("./config.json");
 const Dao = require("./db.js");
+const path = require("path");
+const {exec} = require("child_process");
 const EventEmitter = require("events").EventEmitter;
 
-const Sql = require("@mhzq/mhzqframework").System.Db.Sql;
 const WebRequest = require("@mhzq/mhzqframework").Web.Http.HttpRequest.HttpRequest;
-const Command = require("@mhzq/mhzqframework").System.Shell.Command;
-const MySql = Sql.MySql;
-const AData = Sql.AData;
 const Beans = require("./System/Db/Beans/Entities.js");
 const Setting = Beans.Setting;
 const Log = Beans.Log;
@@ -123,7 +121,7 @@ class Api {
   UserLoggedIn() {
     return this.user != undefined;
   }
-  
+
 
   EmptyHopper(response, data) {
     try {
@@ -216,7 +214,7 @@ class Api {
     }
   }
 
- 
+
 
   async DeleteError(response, data) {
 
@@ -264,7 +262,7 @@ class ApplicationController extends EventEmitter {
 
     var res = await fetch(this.settings.url + "/Control/Authentication/Authenticate/Login/", {
       method: "POST",
-      headers:{"Content-Type": "application/json"}
+      headers: { "Content-Type": "application/json" }
       , body: JSON.stringify({ user: data.user, password: data.password, companyId: this.settings.companyId })
     });
 
@@ -330,41 +328,55 @@ class ApplicationController extends EventEmitter {
   async CheckAccessCore(req, res) {
     try {
 
-        var user;
+      var user;
 
 
-        var userJwt = jwt.verify(req.cookies.jwt, process.env.ACCESS_TOKEN_SECRET);
+      var userJwt = jwt.verify(req.cookies.jwt, process.env.ACCESS_TOKEN_SECRET);
 
-        user = { name: userJwt.user };
+      user = { name: userJwt.user };
 
-        user.isLoggedIn = true;
+      user.isLoggedIn = true;
 
-        return Object.assign({}, user);
+      return Object.assign({}, user);
 
     } catch (error) {
 
-        res.statusCode = 401
-        throw error;
+      res.statusCode = 401
+      throw error;
     }
-}
+  }
 
-async GetInfo(){
+  async GetInfo() {
 
-}
+  }
 
   /**
    * Restarts the raspberry
    */
   Restart(timeout = 5) {
     return new Promise((resolve, reject) => {
-      var cmd = new Command("sudo shutdown", ["-r", "-t", "5"]);
-      cmd.exec(function (err, stdout, stderr) {
-        if (err) {
-          reject(err);
+      // var cmd = new Command("sudo shutdown", ["-r", "-t", "5"]);
+      // cmd.exec(function (err, stdout, stderr) {
+      //   if (err) {
+      //     reject(err);
+      //     return;
+      //   }
+
+      //   resolve(stdout);
+      // });
+      exec(`sudo shutdown -r -t 5`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Hiba: ${error.message}`);
+          reject(new Error(error.message));
           return;
         }
-
-        resolve(stdout);
+        if (stderr) {
+          console.error(`Stderr: ${stderr}`);
+          reject(new Error(stderr));
+          return;
+        }
+        console.log(`Újraindítás sikeres: ${stdout}`);
+        resolve(true);
       });
     });
 
@@ -377,14 +389,28 @@ async GetInfo(){
    */
   Shutdown(timeout = 5) {
     return new Promise((resolve, reject) => {
-      var cmd = new Command("sudo shutdown", ["-t", "5"]);
-      cmd.exec(function (err, stdout, stderr) {
-        if (err) {
-          reject(err);
+      // var cmd = new Command("sudo shutdown", ["-t", "5"]);
+      // cmd.exec(function (err, stdout, stderr) {
+      //   if (err) {
+      //     reject(err);
+      //     return;
+      //   }
+
+      //   resolve(stdout);
+      // });
+      exec(`sudo shutdown -t 5`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Hiba: ${error.message}`);
+          reject(new Error(error.message));
           return;
         }
-
-        resolve(stdout);
+        if (stderr) {
+          console.error(`Stderr: ${stderr}`);
+          reject(new Error(stderr));
+          return;
+        }
+        console.log(`Leállítás sikeres: ${stdout}`);
+        resolve(true);
       });
     });
 
@@ -397,25 +423,43 @@ async GetInfo(){
   UpdateApp() {
 
     return new Promise((resolve, reject) => {
-      var cmd = new Command("npm", ["install", "--prefix", "/home/pi", "@mhzq/citymedia-coin-machine"]);
-      cmd.exec(function (err, stdout, stderr) {
-        if (err) {
-          reject(err);
+      // var cmd = new Command("npm", ["install", "--prefix", "/home/pi", "@mhzq/citymedia-coin-machine"]);
+      // cmd.exec(function (err, stdout, stderr) {
+      //   if (err) {
+      //     reject(err);
+      //     return;
+      //   }
+
+      //   resolve(stdout);
+      // });
+
+      // var updateScriptPath = path.join(__dirname, "update-script.sh");
+      var updateScriptPath = path.join(process.cwd(), "/System/update.sh");
+      exec(`bash ${updateScriptPath}`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Hiba: ${error.message}`);
+          reject(new Error(error.message));
           return;
         }
-
-        resolve(stdout);
+        if (stderr) {
+          console.error(`Stderr: ${stderr}`);
+          reject(new Error(stderr));
+          return;
+        }
+        console.log(`Frissítés sikeres: ${stdout}`);
+        resolve(true);
       });
     });
 
+
   }
 
-  CreateLog(description, errorLevel = Beans.LogType.error){
-      var log = new Log();
-      log.description = description;
-      log.logType = errorLevel;
-      log.createDate = new Date();
-      this.daoCtx.Add(log);
+  CreateLog(description, errorLevel = Beans.LogType.error) {
+    var log = new Log();
+    log.description = description;
+    log.logType = errorLevel;
+    log.createDate = new Date();
+    this.daoCtx.Add(log);
   }
 
   /** Initialize ApplicationController (events, sensors ... etc.) */
@@ -436,7 +480,7 @@ async GetInfo(){
         });
 
         this.settings = await this.GetSettings();
-        
+
         this.authorizationString = "Bearer " + this.settings.token.substr(0, 36) + "_" + this.settings.serialNumber;
 
         //Sending log informations
@@ -455,7 +499,7 @@ async GetInfo(){
           s.name = "hopper";
           s.value = "Hopper";
           await this.daoCtx.Add(s);
-          
+
           this.hopper = new Hopper.Hopper();
         }
 
@@ -472,7 +516,7 @@ async GetInfo(){
           s.name = "coinCount";
           s.value = 0;
           await this.daoCtx.Add(s);
-          
+
           this.coinCount = 0;
         }
 
@@ -481,7 +525,7 @@ async GetInfo(){
           s.name = "pos";
           s.value = "Monera";
           await this.daoCtx.Add(s);
-          
+
           this.settings.pos = "Monera";
         }
 
@@ -536,7 +580,7 @@ async GetInfo(){
 
 
         this.hopper.on("lowLevelAlert", () => {
-          this.CreateLog( "Kevés van a hopper érzékelő szerint!", LogType.hopperLowLevel);
+          this.CreateLog("Kevés van a hopper érzékelő szerint!", LogType.hopperLowLevel);
         });
 
         this.hopper.on("rawOutputError", async (data) => {
@@ -560,7 +604,7 @@ async GetInfo(){
 
 
         this.pos.on("error", (err) => {
-          
+
           this.CreateLog(err.message);
         });
 
@@ -583,8 +627,8 @@ async GetInfo(){
           });
         }, 100));
 
-        
-        
+
+
 
         this.SendDataContinuousStart();
 
@@ -649,7 +693,7 @@ async GetInfo(){
             instance.hopper.removeListener("coinDrop", coinDrop);
 
             if (coinCount > 1) {
-              
+
               this.CreateLog(`Egy fizetésre ${coinCount} érme került ki a szenzor szerint`);
             }
 
@@ -723,6 +767,8 @@ async GetInfo(){
       , LogType.fillUp);
 
     this._SetCoinCount(this.coinCount);
+
+    return this.coinCount;
   }
 
   EmptyHopper() {
@@ -778,17 +824,17 @@ async GetInfo(){
 
   }
 
-  async GetSystemInfo(){
-    var s = {package: pjson};
+  async GetSystemInfo() {
+    var s = { package: pjson };
     s.settings = Object.assign(this.settings);
     var salesCount = await this.GetSalesCount();
     var salesCountAfterLastFillUp = await this.GetSalesAfterLastFillUp();
-    s.salesInfo = { coinCount: this.coinCount, salesCount: salesCount, salesCountAfterLastFillUp: salesCountAfterLastFillUp};
+    s.salesInfo = { coinCount: this.coinCount, salesCount: salesCount, salesCountAfterLastFillUp: salesCountAfterLastFillUp };
     return s;
   }
 
   async InfoChange() {
-   
+
     var s = this.GetSystemInfo();
 
     this.emit("infoChange", s);
@@ -962,7 +1008,7 @@ async GetInfo(){
    * Kitörli az összes hibát a gépből
    */
   async DeleteErrors() {
-    var errors = await this.daoCtx.GetList( Error, {});
+    var errors = await this.daoCtx.GetList(Error, {});
 
     var hasRollError = errors.find((o) => {
       return o.errorType = "notRolled";
@@ -987,7 +1033,7 @@ async GetInfo(){
     for (var i in data) {
       let setting = await this.daoCtx.Get(Setting, { name: i });
       setting.value = data[i];
-      if(this.settings[i]){
+      if (this.settings[i]) {
         this.settings[i] = data[i];
       }
       await this.daoCtx.Update(setting);
