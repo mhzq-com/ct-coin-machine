@@ -835,7 +835,7 @@ class ApplicationController extends EventEmitter {
 
   async InfoChange() {
 
-    var s = this.GetSystemInfo();
+    var s = await this.GetSystemInfo();
 
     this.emit("infoChange", s);
 

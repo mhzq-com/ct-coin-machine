@@ -240,7 +240,7 @@ const Home = function ({ user }) {
                             <p className="card-text">Sorozatszám: <span className='uk-badge'>{info.settings.serialNumber}</span></p>
                             <p className="card-text">Érmék darabszáma: <span className='uk-badge'>{info.salesInfo.coinCount}</span></p>
                             <p className="card-text">Eladások: <span className='uk-badge'>{info.salesInfo.salesCount}</span></p>
-                            <p className="card-text">Eladások utolsó feltöltés óta: <span className='uk-badge'>{info.salesInfo.salesAfterLastFillUp}</span></p>
+                            <p className="card-text">Eladások utolsó feltöltés óta: <span className='uk-badge'>{info.salesInfo.salesCountAfterLastFillUp}</span></p>
 
                         </div>
                     </div>

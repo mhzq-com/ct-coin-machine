@@ -3,6 +3,7 @@ const session = require("express-session");
 const http = require("http");
 const next = require("next");
 const socketio = require('socket.io');
+const socketioClient = require("socket.io-client");
 const multer = require("multer");
 const upload = multer({ dest: 'uploads/' })
 const cors = require("cors");
@@ -12,6 +13,110 @@ const port = 8080;
 const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev });
 const nextHandler = nextApp.getRequestHandler();
+
+function initializeSocketClient(settings){
+    
+    
+    // var socket = socketioClient(settings.socketUrl, { query: { room: settings.serialNumber } });
+    var socket = socketioClient(settings.socketUrl);
+
+    socket.on("update", async (data, cb) => {
+
+        try {
+            await appControl.UpdateApp();
+            if (cb != null) cb({ status: "OK", data: data });
+        } catch (error) {
+            if (cb != null) cb(null, { message: error.message });
+        }
+
+    });
+
+    socket.on("tossACoinToYourWitcher", (data, cb) => {
+        //console.log(data);
+
+        appControl.TossACoinToYourWitcher().then(() => {
+            if (cb != null) cb({ status: "OK" });
+        }).catch((reason) => {
+            if (cb != null) cb(null, { message: reason.message });
+        });
+
+    });
+
+    socket.on("emptyHopper", (data, cb) => {
+        appControl.EmptyHopper().then(() => {
+            if (cb != null) cb({ status: "OK" });
+        }).catch((reason) => {
+            if (cb != null) cb(null, { message: reason.message });
+        });
+    });
+
+   
+
+    socket.on("fillUpHopper", (data, cb) => {
+        appControl.FillUpHopper(data.coinCount);
+        if (cb != null) cb({ status: "OK" });
+
+    });
+
+    socket.on("restart", (data, cb) => {
+        appControl.Restart().then((data) => {
+            if (cb != null) cb({ status: "OK", data: data });
+        }).catch((reason) => {
+            if (cb != null) cb(null, { message: reason.message });
+        });
+
+    });
+
+    socket.on("updateApp", (data, cb) => {
+        appControl.UpdateApp().then((data) => {
+            if (cb != null) cb({ status: "OK", data: data });
+        }).catch((reason) => {
+            if (cb != null) cb(null, { message: reason.message });
+        });
+
+    });
+
+    socket.on("getInfo", (data, cb) => {
+        appControl.InfoChange();
+
+    });
+
+    socket.on("getErrors", async (data, cb) => {
+        var errors = await appControl.GetErrors();
+        if (cb != null) cb({ status: "OK", data: errors });
+
+    });
+
+    socket.on("deleteErrors", async (data, cb) => {
+        try{
+
+            await appControl.DeleteErrors();
+            if (cb != null) cb({ status: "OK" });
+        } catch(reason){
+            if (cb != null) cb(null, { message: reason.message });
+        }
+    });
+
+    socket.on("connect", () => {
+        socket.emit("joinRoom", {room: settings.serialNumber, isMachine: true});
+    });
+
+
+
+    appControl.on("infoChange", (data) => {
+        socket.emit("infoChange", data);
+    });
+
+    appControl.on("coinCount", (data) => {
+
+        socket.emit("coinCount", data);
+    });
+
+    appControl.on("rawError", (data) => {
+
+        socket.emit("rawError", data);
+    });
+}
 
 var appControl = AppControlInstance;
 
@@ -74,6 +179,8 @@ var appControl = AppControlInstance;
         server.listen(port, () => {
             console.log(`> Ready on http://localhost:${port}`);
         });
+
+        initializeSocketClient(appControl.settings)
     });
 // }
 
