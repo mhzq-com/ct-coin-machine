@@ -48,8 +48,8 @@ const Home = function ({ user }) {
             // setTime(new Date(data).toLocaleDateString());
         });
 
-        socket.on('coinCount', function (data) { //get button status from client
-            alert(`Kidobott érmék darabszáma: {data}`);
+        socket.on('coinCount', function (data) { 
+            alert(`Kidobott érmék darabszáma: ${data}`);
         });
 
         const fetchData = async () => {

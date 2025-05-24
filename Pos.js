@@ -31,7 +31,7 @@ class MoneraParser extends Transform {
         //   console.log(this.incomingData);
 
         if (this.incomingData.toString("utf-8") == "PAID") {
-            this.push(this.incomingData); // this replaces emitter.emit("data", incomingData);
+            this.push(this.incomingData); 
         }
 
         cb();

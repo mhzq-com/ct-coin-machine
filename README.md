@@ -1,11 +1,8 @@
 # ct-coin-machine
- Coin Machine
+ CT Coin Machine
 
 
 ## GPIO
-### onoff or pigpio?
-
-The pigpio Node.js package is a wrapper for the pigpio C library. The pigpio C libray requires root/sudo privileges to access certain hardware peripherals. The pigpio Node.js package can't be modified to avoid this.
 
 ## MONERA
 
