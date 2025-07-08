@@ -434,8 +434,8 @@ class ApplicationController extends EventEmitter {
       // });
 
       // var updateScriptPath = path.join(__dirname, "update-script.sh");
-      var updateScriptPath = path.join(process.cwd(), "/System/update.sh");
-      exec(`bash ${updateScriptPath}`, (error, stdout, stderr) => {
+      var updateScriptPath = path.join(process.cwd(), `/System/update.${process.platform === "win32"?"bat":"sh"}`);
+      exec(`${updateScriptPath}`, (error, stdout, stderr) => {
         if (error) {
           console.error(`Hiba: ${error.message}`);
           reject(new Error(error.message));
