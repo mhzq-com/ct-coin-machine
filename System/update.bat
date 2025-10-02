@@ -1,15 +1,16 @@
-@echo off
+#@echo off
 echo Frissítés indítása... >> update.log
-cd /d F:\Temp\ct-coin-machine
+echo Token: %GIT_TOKEN% >> update.log
+cd /d E:\Munka\MHZQ\CityMedia\Rpi\ct-coin-machine
 
 echo Git pull... >> update.log
-git pull origin main >> update.log 2>&1
+git pull https://$GIT_TOKEN@github.com/mhzq-com/ct-coin-machine.git >> update.log
 
 echo NPM install... >> update.log
-npm install >> update.log 2>&1
+npm install  --no-audit --no-fund
 
 echo Build futtatása... >> update.log
-npm run build >> update.log 2>&1
+npm run build 
 
 echo Alkalmazás újraindítása... >> update.log
 #pm2 restart your-app-name >> update.log 2>&1

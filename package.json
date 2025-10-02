@@ -4,7 +4,8 @@
   "description": "Coin Machine",
   "main": "src/app.js",
   "scripts": {
-    "test": "src/test.js"
+        "build": "next build",
+        "start": "node app.js"
   },
   "repository": {
     "type": "git",
