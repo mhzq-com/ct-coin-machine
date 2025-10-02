@@ -5,7 +5,6 @@ const path = require("path");
 const { exec } = require("child_process");
 const EventEmitter = require("events").EventEmitter;
 
-const WebRequest = require("@mhzq/mhzqframework").Web.Http.HttpRequest.HttpRequest;
 const Beans = require("./System/Db/Beans/Entities.js");
 const Setting = Beans.Setting;
 const Log = Beans.Log;
