@@ -1,17 +1,10 @@
 var Mysql = require("./System/Db/MySql").MySql;
 
 var config = {
-    "dbHost": "localhost"
-    , "dbUser": "root"
-    , "dbPassword": ""
-    , "dbName": "coin"
-    
-}
-
-try {
-    var cnf = require("./config.json");
-    config = Object.assign(config, cnf);
-} catch (error) {
+    "dbHost": process.env.DB_HOST || "127.0.0.1"
+    , "dbUser": process.env.DB_USER || "root"
+    , "dbPassword": process.env.DB_PASS || ""
+    , "dbName": process.env.DB_NAME || "coin"
     
 }
 

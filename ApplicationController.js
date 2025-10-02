@@ -1,5 +1,4 @@
 
-const Config = require("./config.json");
 const Dao = require("./db.js");
 const path = require("path");
 const { exec } = require("child_process");
@@ -567,40 +566,6 @@ class ApplicationController extends EventEmitter {
 
 
 
-        //this.door = new Gpio(Config.doorGpio, "in", "both");
-        // this.powerOnLed = new Gpio(Config.powerOnLed, "out");
-
-        //this.coinTrayLed = new Gpio(Config.coinTrayLed, "out");
-
-        // //Indításkor az ajtó nyitva volt-e
-        // var doorOpen = this.door.readSync() == 1;
-        // var log = new Log();
-        // log.logType = doorOpen == 1 ? LogType.doorOpen : LogType.doorClose;
-        // log.description = doorOpen == 1 ? "Indítás: ajtó nyitva" : "Indítás: ajtó zárva";
-        // log.Add();
-
-
-
-        // this.door.watch(debounce((err, level) => {
-
-        //   // console.log(level);
-
-        //   if (level == 1) {
-        //   } else {
-
-        //     // hopper.DropAllCoinOut().then((coinCount) => {
-
-        //     //   console.log("coinCount", coinCount);
-        //     // });
-        //     //appControl.TossACoinToYourWitcher();
-
-        //   }
-
-
-        // }, 100));
-
-
-
         /** Hopper events */
         this.hopper.on("emptyAlert", () => {
           this.CreateLog("Kiürült a hopper! Nem tud érmét kiadni!", LogType.hopperEmpty);
@@ -837,7 +802,7 @@ class ApplicationController extends EventEmitter {
 
     this.settings.coinCount = coinCount;
 
-    if (this.coinCount < Config.coinAlertLevel) {
+    if (this.settings.coinAlertLevel > 0 && this.coinCount < this.settings.coinAlertLevel) {
       //@TODO coinCount below x need to send mail
     }
 
