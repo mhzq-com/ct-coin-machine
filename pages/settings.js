@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import AuthReqPage from '../components/AuthReqPage'
 import Input from '../components/html/form/Input';
 import Select from '../components/html/form/Select';
+import Button from '../components/html/form/Button';
 // import $ from 'jquery';
 
 export async function getServerSideProps({ req, res }) {
@@ -32,6 +33,9 @@ const Home = ({ user }) => {
 
     const [types, setTypes] = useState(undefined);
     const [settings, setSettings] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [companyIdVisible, setCompanyIdVisible] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
 
     const fetchData = async () => {
@@ -66,6 +70,8 @@ const Home = ({ user }) => {
         items = await items.json();
 
         setSettings(items);
+
+        loadCompanies();
     }
     useEffect(() => {
         // call the function
@@ -159,7 +165,7 @@ const Home = ({ user }) => {
 
         var data = deepSerializeForm($("form[name=settingsForm]")[0]);
 
-
+        console.log(data);
 
         var req = await fetch("/api/Control/SaveSettings", {
             method: 'POST', // *GET, POST, PUT, DELETE, etc.
@@ -181,6 +187,37 @@ const Home = ({ user }) => {
             UIkit.notification({ message: res.message, status: "danger" });
         }
 
+    }
+
+    async function loadCompanies(){
+        try {
+            setIsLoading(true);
+            var res = await fetch("/api/Control/GetCompanyList", {
+                method: "POST"
+                , headers: {
+                    "Content-Type": "application/json"
+                    ,"Authorization": "Bearer f1b30315391805fc222d8dc5ba0f1f54faf4_500"
+                }
+            })
+            if(res.ok){
+                setCompanies(await res.json());
+            } else {
+                res = await res.json();
+                throw new Error(res.error_description);
+            }
+        } catch (error) {
+            UIkit.notification(error.message);
+        } finally{
+            setIsLoading(false);
+        }
+    }
+
+    function setCompany(companyId){
+        let set = settings.find((o) => { return o.name == "companyId"});
+        set.value = companyId;
+        console.log(settings);
+        setSettings([...settings]);
+        // setSettings(prev => prev.map((item, i) => i === 1 ? {name: "companyId", value: companyId, description: "asd"} : item));
     }
 
     return (<AuthReqPage title={title} user={user}>
@@ -244,6 +281,28 @@ const Home = ({ user }) => {
                                                     })
                                             }
                                             </Select>
+        
+                                        </div>
+                                    )
+                                    break;
+                                    case "companyId": 
+                                    
+                                    return (
+                                        <div key={setting.name} className='input-group uk-margin'>
+                                            <div className='uk-margin'>
+        
+                                                <label htmlFor={setting.name}>{setting.description}</label>
+                                            </div>
+                                            <div className={`${isLoading?'loading':''}`}><Select className='uk-select' id={`${setting.name}_select`} value={setting.value} onChange={function (o) {console.log(o, this); o.target.value = o.target.value; setCompany(o.target.value);}} >
+                                            {companies && companies.length > 0 && companies.map((o) => {
+                                                        return <option value={o.id}>{o.name}</option>
+                                                    })
+                                            }
+                                            </Select>
+                                            </div>
+                                            <Button onClick={() => { setCompanyIdVisible(!companyIdVisible)}}>Manuális bevitel</Button>
+                                            <Input className={`${companyIdVisible?'':'uk-hidden'} number`} type="number" id={setting.name} name={setting.name} value={setting.value} required={true} />
+
         
                                         </div>
                                     )

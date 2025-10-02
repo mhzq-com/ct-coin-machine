@@ -5,13 +5,16 @@ import classnames from "classnames";
 export default function Input(props){
     
     var inputDom = useRef();
-    var searchString, setSearchString;
     var inputName = props.name || "";
 
     
     var bindValue = (props.bind && Object.keys(props.bind).find((o) => { return o == inputName; })) ? props.bind[inputName] : undefined;
-    searchString = props.value || bindValue;
-    [searchString, setSearchString] = useState(searchString);
+
+    useEffect(() => {
+        setSearchString(props.value);
+    }, [props.value])
+
+    const [searchString, setSearchString] = useState(props.value || bindValue);
 
     function handleChange(e){
         console.log("change", e);

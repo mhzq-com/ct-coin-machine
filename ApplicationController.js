@@ -2,7 +2,7 @@
 const Config = require("./config.json");
 const Dao = require("./db.js");
 const path = require("path");
-const {exec} = require("child_process");
+const { exec } = require("child_process");
 const EventEmitter = require("events").EventEmitter;
 
 const WebRequest = require("@mhzq/mhzqframework").Web.Http.HttpRequest.HttpRequest;
@@ -63,14 +63,17 @@ class Api {
     this.app = appControl;
   }
 
-  LoginWithPin(response, data) {
-
-  }
 
   Login(response, data) {
 
 
-    this.app.service.post({ path: "/api/Control/Authentication/Authenticate/Login", timeout: 40000 }, { user: data.user, password: data.password, companyId: Config.service.companyId }).then(data => {
+    fetch(`${this.settings.url}/Control/Authentication/Authenticate/Login`
+      , {
+        method: "POST"
+        , headers: { "Content-Type": "application/json" }
+        , body: JSON.stringify({ user: data.user, password: data.password, companyId: this.settings.companyId })
+      }
+    ).then(data => {
 
       response.json(data);
       this.user = data;
@@ -246,11 +249,6 @@ class ApplicationController extends EventEmitter {
     /** Send logs continuously */
     this.isSendContinuous = false;
 
-
-    //this.authorizationString = "Bearer " + Config.service.token.substr(0, 36) + "_" + Config.serialNumber;
-
-    this.service = new WebRequest(Config.service.url, Config.service.port);
-
     this.api = new Api(this);
 
     this.coinTimeoutContext = setTimeoutContext();
@@ -260,17 +258,64 @@ class ApplicationController extends EventEmitter {
 
   async Login(data, response) {
 
-    var res = await fetch(this.settings.url + "/Control/Authentication/Authenticate/Login/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" }
-      , body: JSON.stringify({ user: data.user, password: data.password, companyId: this.settings.companyId })
-    });
+    try {
+      var res = await fetch(this.settings.url + "/Control/Authentication/Authenticate/Login/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+        , body: JSON.stringify({ user: data.user, password: data.password, companyId: this.settings.companyId })
+      });
 
-    if (res.ok) {
-      let user = await res.json();
-      delete user.password;
+      if (res.ok) {
+        let user = await res.json();
+        delete user.password;
 
-      //use the payload to store information about the user such as username, user role, etc.
+        //use the payload to store information about the user such as username, user role, etc.
+        let payload = { user: user.name };
+
+        //create the access token with the shorter lifespan
+        let accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+          algorithm: "HS256",
+          //expiresIn: process.env.ACCESS_TOKEN_LIFE
+        })
+
+
+        //send the access token to the client inside a cookie
+        const now = new Date();
+        const plus30 = new Date(now.getTime() + 30 * 60 * 1000);
+
+        //send the access token to the client inside a cookie
+        response.cookie("jwt", accessToken, {
+          // secure: true
+          // , httpOnly: true
+          // ,path: "/"
+          expires: plus30
+        });
+
+        this.CreateLog(`${user.name} bejelentkezett`, Beans.LogType.info);
+
+        return user;
+
+
+      } else {
+        res = await res.json();
+        throw new Error(res.error_description);
+      }
+
+    } catch (error) {
+      throw error;
+    }
+
+
+
+  }
+
+
+  async LoginWithPin(req, response) {
+    var pwd = crypto.createHash('sha256').update(req.body.password).digest('hex');
+
+    var data = await this.daoCtx.Get(Setting, { name: "pin" });
+    if (pwd == data.value) {
+      var user = { id: 1, name: "administratorPin" };
       let payload = { user: user.name };
 
       //create the access token with the shorter lifespan
@@ -279,50 +324,33 @@ class ApplicationController extends EventEmitter {
         //expiresIn: process.env.ACCESS_TOKEN_LIFE
       })
 
-      // //create the refresh token with the longer lifespan
-      // let refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-      //     algorithm: "HS256",
-      //     expiresIn: process.env.REFRESH_TOKEN_LIFE
-      // })
-
-      // //store the refresh token in the user array
-      // users[username].refreshToken = refreshToken
+      const now = new Date();
+      const plus30 = new Date(now.getTime() + 30 * 60 * 1000);
 
       //send the access token to the client inside a cookie
       response.cookie("jwt", accessToken, {
         // secure: true
         // , httpOnly: true
         // ,path: "/"
-        expires: new Date(2030, 0)
-      })
+        expires: plus30
+      });
+
+      this.CreateLog(`${user.name} bejelentkezett pin kóddal`, Beans.LogType.info);
 
       return user;
 
 
     } else {
-      res = await res.json();
-      throw new Error(res.error_description);
+      response.status(401);
+      response.json({ error_description: "Hibás pin" });
     }
 
 
+  }
 
-    ({ path: "/api/Control/Authentication/Authenticate/Login", timeout: 40000 }, { user: data.user, password: data.password, companyId: Config.service.companyId }).then(data => {
-
-      response.json(data);
-      this.user = data;
-
-    }).catch(error => {
-      if (error.response) {
-
-        response.status(error.response.statusCode);
-        response.json(JSON.parse(error.response.text));
-      } else if (error.code == "ECONNREFUSED") {
-        response.status(503);
-        response.json(error);
-      }
-
-    });
-
+  async Logout(request, response) {
+    response.cookie("jwt", "");
+    this.CreateLog(`Kijelentkezett`, Beans.LogType.info);
   }
 
   async CheckAccessCore(req, res) {
@@ -434,7 +462,7 @@ class ApplicationController extends EventEmitter {
       // });
 
       // var updateScriptPath = path.join(__dirname, "update-script.sh");
-      var updateScriptPath = path.join(process.cwd(), `/System/update.${process.platform === "win32"?"bat":"sh"}`);
+      var updateScriptPath = path.join(process.cwd(), `/System/update.${process.platform === "win32" ? "bat" : "sh"}`);
       exec(`${updateScriptPath}`, (error, stdout, stderr) => {
         if (error) {
           console.error(`Hiba: ${error.message}`);
@@ -454,11 +482,12 @@ class ApplicationController extends EventEmitter {
 
   }
 
-  CreateLog(description, errorLevel = Beans.LogType.error) {
+  CreateLog(description, errorLevel = Beans.LogType.error, data = null) {
     var log = new Log();
     log.description = description;
     log.logType = errorLevel;
     log.createDate = new Date();
+    log.data = JSON.stringify(log.data) || undefined;
     this.daoCtx.Add(log);
   }
 
@@ -617,7 +646,7 @@ class ApplicationController extends EventEmitter {
               this.pos.SetEnabled(true);
             }
 
-            this.CreateLog("Érme eladás", LogType.sales);
+            this.CreateLog("Érme eladás", LogType.sales, {grossPrice: this.settings.coinPrice});
           }).catch((reason) => {
             this.pos.NotPassed();
             // var log = new Log();
@@ -907,7 +936,15 @@ class ApplicationController extends EventEmitter {
         }
 
 
-        this.service.post({ path: "/api/Control/CityMedia/Telemetry/Telemetry/AddTelemetryData", headers: { Authorization: this.authorizationString }, timeout: 40000 }, { data: dataRows }).then(data => {
+        fetch(`${this.settings.url}/Control/CityMedia/Telemetry/Telemetry/AddTelemetryData`, {
+          method: "POST"
+          , headers: {
+            Authorization: this.authorizationString
+            , "Content-Type": "application/json"
+          }
+          , body: JSON.stringify({ data: dataRows })
+        }
+        ).then(data => {
           console.log((new Date()).toLocaleString(), "adatbeküldés sikeres");
           dataRows.forEach(element => {
             element.isSent = 1;
@@ -1039,12 +1076,29 @@ class ApplicationController extends EventEmitter {
       await this.daoCtx.Update(setting);
     }
 
+    this.authorizationString = "Bearer " + this.settings.token.substr(0, 36) + "_" + this.settings.serialNumber;
+
     return this.settings;
 
   }
 
 
+  async GetCompanyList() {
+    var res = await fetch(`${this.settings.url}/DI/Model/Entity/Administration/CompanyManagement/Com_Company/GetObjectList/`
+      , {
+        method: "POST"
+        , headers: {
+          Authorization: this.authorizationString
+          , "Content-Type": "application/json"
+        }
+      }
+    );
+    if (res.ok) {
+      return await res.json();
+    }
+  }
 }
+
 
 let controller = global.controller;
 

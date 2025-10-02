@@ -24,7 +24,6 @@
   },
   "homepage": "https://github.com/mhzq-com/cm-coin-machine#readme",
   "dependencies": {
-    "@mhzq/mhzqframework": "^1.1.6",
     "body-parser": "^1.20.2",
     "classnames": "^2.5.1",
     "express": "^4.19.2",

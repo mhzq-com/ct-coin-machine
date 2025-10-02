@@ -26,6 +26,26 @@ export const getServerSideProps = async function ({ req, res }) {
 
 }
 
+async function logout(){
+  try {
+    var res = await fetch("/api/Authentication/Logout", {
+      method: "POST"
+      , headers: {
+        "Content-Type": "application/json"
+      }
+    });
+    if(res.ok){
+      window.location.href = "/";
+    } else {
+      res = await res.json();
+      throw new Error(res.message);
+    }
+  } catch (error) {
+    
+    UIkit.notification(error.message);
+  }
+}
+
 const AuthReqPage = (props) => {
 
   return <div>
@@ -42,7 +62,7 @@ const AuthReqPage = (props) => {
             <span className="uk-margin-small-right"></span><i className="fa-solid fa-user"></i> {props.user.name}
           </div>
           <div>
-            <button type="button" className="primary-button uk-button uk-button-primary signout">Kijelentkezés <i className="fas fa-sign-out-alt"></i></button>
+            <button type="button" className="primary-button uk-button uk-button-primary signout" onClick={logout}>Kijelentkezés <i className="fas fa-sign-out-alt"></i></button>
           </div>
         </div>
       </div>
@@ -61,7 +81,7 @@ const AuthReqPage = (props) => {
           <li className="uk-nav-divider"></li>
           
           <li><a href="/settings"><i className="fa-2x fa-solid fa-screwdriver-wrench"></i> Beállítások</a></li>
-          <li><button type="button" className="uk-button uk-button-primary uk-width-1-1 signout">Kijelentkezés <i className="fa-2x fas fa-sign-out-alt"></i></button></li>
+          <li><button type="button" className="uk-button uk-button-primary uk-width-1-1 signout" onClick={logout}>Kijelentkezés <i className="fa-2x fas fa-sign-out-alt"></i></button></li>
 
         </ul>
 
