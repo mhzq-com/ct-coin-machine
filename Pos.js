@@ -5,10 +5,11 @@ const Transform = require("stream").Transform;
 const EventEmitter = require("events").EventEmitter;
 
 
-const ENABLE_GPIO = process.env.ENABLE_GPIO || 0;
+const ENABLE_GPIO = parseInt(process.env.ENABLE_GPIO) > 0 || false;
 if (ENABLE_GPIO) {
     const Gpio = require('onoff').Gpio;
 }
+
 
 const MoneraCommands = {
     PASSED: "PASSED",
