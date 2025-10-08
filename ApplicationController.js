@@ -1,7 +1,8 @@
 
 const Dao = require("./db.js");
+const fs = require("fs");
 const path = require("path");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const EventEmitter = require("events").EventEmitter;
 
 const Beans = require("./System/Db/Beans/Entities.js");
@@ -21,6 +22,22 @@ const jwt = require('jsonwebtoken');
 //GPIO16 36-os láb Power On Led (Világítson ha elindult a rendszer)
 //GPIO20 40-es láb Érme fiók led (Világítson 5mp-ig ha kiadott egy érmét)
 
+function timestamp() {
+  return new Date().toISOString();
+}
+
+// Segédfv: sorokra bontva timestamp-et írunk a logba (és konzolra).
+function writeWithTimestamp(stream, text) {
+  if (!text) return;
+  // biztos, hogy string
+  const s = text.toString();
+  // ha több sor érkezik egyszerre, mindet prefixeljük
+  const lines = s.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].length === 0) continue;
+    stream.write(`${timestamp()} ${lines[i]}\n`);
+  }
+}
 
 function setTimeoutContext() {
   return function (fn, tm) {
@@ -381,10 +398,10 @@ AND DATE(createDate) >= ?
 AND DATE(createDate) <= ?
 AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
-      logs = logs.map((o) => {
-        o.createDate = o.createDate.toLocaleString();
-        return o;
-      });
+    logs = logs.map((o) => {
+      o.createDate = o.createDate.toLocaleString();
+      return o;
+    });
 
     var sum = await this.daoCtx.GetRows(`SELECT COUNT(*) AS quantity, SUM(COALESCE(grossPrice, 1200)) AS grossAmount FROM log
 WHERE 1
@@ -392,9 +409,9 @@ AND DATE(createDate) >= ?
 AND DATE(createDate) <= ?
 AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
-      data = [...logs, ...sum];
+    data = [...logs, ...sum];
 
-      return data;
+    return data;
   }
 
   /**
@@ -464,39 +481,97 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
   }
 
+
+
   /**
    * Uptates the application
    */
   UpdateApp() {
 
+    var updateScriptPath = path.join(process.cwd(), `/System/update.${process.platform === "win32" ? "bat" : "sh"}`);
+
     return new Promise((resolve, reject) => {
-      // var cmd = new Command("npm", ["install", "--prefix", "/home/pi", "@mhzq/citymedia-coin-machine"]);
-      // cmd.exec(function (err, stdout, stderr) {
-      //   if (err) {
-      //     reject(err);
-      //     return;
-      //   }
 
-      //   resolve(stdout);
-      // });
+      // Nyissuk meg a log fájlt append módban
+      const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+      logStream.on("error", (err) => {
+        console.error("Log fájl írási hiba:", err);
+      });
 
-      // var updateScriptPath = path.join(__dirname, "update-script.sh");
-      var updateScriptPath = path.join(process.cwd(), `/System/update.${process.platform === "win32" ? "bat" : "sh"}`);
-      exec(`${updateScriptPath}`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Hiba: ${error.message}`);
-          reject(new Error(error.message));
-          return;
+      writeWithTimestamp(logStream, `--- UPDATE START ---`);
+      writeWithTimestamp(logStream, `Running script: ${updateScriptPath}`);
+
+      const child = spawn(updateScriptPath, {
+        shell: true, // kell a .sh vagy .bat futtatásához
+        env: {
+          ...process.env,
+          GIT_TOKEN: process.env.GIT_TOKEN, // továbbadjuk az env változót
+        },
+      });
+
+
+
+      child.stdout.on("data", (data) => {
+        const text = data.toString();
+        this.emit('updateProgress', { type: "stdout", data: text });
+        writeWithTimestamp(logStream, txt);
+
+      });
+
+      child.stderr.on("data", (data) => {
+        const text = data.toString();
+        this.emit('updateProgress', { type: "stderr", data: text });
+        writeWithTimestamp(logStream, `STDERR: ${txt}`);
+      });
+      
+      child.on("error", (err) => {
+        this.emit('updateProgress', { type: "error", data: err.message });
+        writeWithTimestamp(logStream, `ERROR: ${err.message}`);
+        logStream.end(`${timestamp()} child error\n`);
+        reject(err);
+      });
+
+      child.on("close", (code) => {
+        writeWithTimestamp(logStream, `--- UPDATE END --- Exit code: ${code} ${signal ? `Signal: ${signal}` : ""}`);
+        logStream.end(); // lezárjuk a logot
+        if (code === 0) {
+          this.emit('updateProgress', { type: "stdout", data: "✅ Frissítés sikeres!" });
+          console.log("✅ Frissítés sikeres!");
+          resolve(output);
+        } else {
+          this.emit('updateProgress', { type: "stderr", data: `Frissítés hibával leállt (exit code: ${code})\n${output}` });
+          reject(new Error(`Frissítés hibával leállt (exit code: ${code})\n${output}`));
         }
-        if (stderr) {
-          console.error(`Stderr: ${stderr}`);
-          reject(new Error(stderr));
-          return;
-        }
-        console.log(`Frissítés sikeres: ${stdout}`);
-        resolve(true);
       });
     });
+
+    // return new Promise((resolve, reject) => {
+    //   // var cmd = new Command("npm", ["install", "--prefix", "/home/pi", "@mhzq/citymedia-coin-machine"]);
+    //   // cmd.exec(function (err, stdout, stderr) {
+    //   //   if (err) {
+    //   //     reject(err);
+    //   //     return;
+    //   //   }
+
+    //   //   resolve(stdout);
+    //   // });
+
+    //   // var updateScriptPath = path.join(__dirname, "update-script.sh");
+    //   exec(`${updateScriptPath}`, (error, stdout, stderr) => {
+    //     if (error) {
+    //       console.error(`Hiba: ${error.message}`);
+    //       reject(new Error(error.message));
+    //       return;
+    //     }
+    //     if (stderr) {
+    //       console.error(`Stderr: ${stderr}`);
+    //       reject(new Error(stderr));
+    //       return;
+    //     }
+    //     console.log(`Frissítés sikeres: ${stdout}`);
+    //     resolve(true);
+    //   });
+    // });
 
 
   }
@@ -530,7 +605,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
         this.authorizationString = "Bearer " + this.settings.token.substr(0, 36) + "_" + this.settings.serialNumber;
 
-        
+
 
         //Sending log informations
         setInterval(() => {
@@ -544,7 +619,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
           this.hopper = new Hopper[this.settings.hopper]();
         } catch (error) {
-    			console.log(error);
+          console.log(error);
           var s = new Setting();
           s.name = "hopper";
           s.value = "Hopper";

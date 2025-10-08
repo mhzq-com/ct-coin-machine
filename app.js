@@ -173,6 +173,11 @@ var appControl = AppControlInstance;
             io.sockets.emit("error", data);
         });
 
+        appControl.on("updateProcess", (data) => {
+
+            io.sockets.emit("updateProcess", data);
+        });
+
 
         app.all('*', (req, res) => nextHandler(req, res));
 
