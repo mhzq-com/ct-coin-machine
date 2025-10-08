@@ -279,7 +279,7 @@ class ApplicationController extends EventEmitter {
 
         //send the access token to the client inside a cookie
         const now = new Date();
-        const plus30 = new Date(now.getTime() + 30 * 60 * 1000);
+        const plus30 = new Date(now.getTime() + 3600 * 1000 * 1);
 
         //send the access token to the client inside a cookie
         response.cookie("jwt", accessToken, {
@@ -323,7 +323,7 @@ class ApplicationController extends EventEmitter {
       })
 
       const now = new Date();
-      const plus30 = new Date(now.getTime() + 30 * 60 * 1000);
+      const plus30 = new Date(now.getTime() + 3600 * 1000 * 1);
 
       //send the access token to the client inside a cookie
       response.cookie("jwt", accessToken, {
@@ -372,8 +372,29 @@ class ApplicationController extends EventEmitter {
     }
   }
 
-  async GetInfo() {
+  async GetStat(data, res) {
 
+
+    var logs = await this.daoCtx.GetRows(`SELECT * FROM log
+WHERE 1
+AND DATE(createDate) >= ?
+AND DATE(createDate) <= ?
+AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
+
+      logs = logs.map((o) => {
+        o.createDate = o.createDate.toLocaleString();
+        return o;
+      });
+
+    var sum = await this.daoCtx.GetRows(`SELECT COUNT(*) AS quantity, SUM(COALESCE(grossPrice, 1200)) AS grossAmount FROM log
+WHERE 1
+AND DATE(createDate) >= ?
+AND DATE(createDate) <= ?
+AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
+
+      data = [...logs, ...sum];
+
+      return data;
   }
 
   /**
@@ -480,12 +501,11 @@ class ApplicationController extends EventEmitter {
 
   }
 
-  CreateLog(description, errorLevel = Beans.LogType.error, data = null) {
+  CreateLog(description, errorLevel = Beans.LogType.error) {
     var log = new Log();
     log.description = description;
     log.logType = errorLevel;
     log.createDate = new Date();
-    log.data = JSON.stringify(log.data) || undefined;
     this.daoCtx.Add(log);
   }
 
@@ -510,6 +530,8 @@ class ApplicationController extends EventEmitter {
 
         this.authorizationString = "Bearer " + this.settings.token.substr(0, 36) + "_" + this.settings.serialNumber;
 
+        
+
         //Sending log informations
         setInterval(() => {
           this.SendDataContinuousStart();
@@ -522,6 +544,7 @@ class ApplicationController extends EventEmitter {
 
           this.hopper = new Hopper[this.settings.hopper]();
         } catch (error) {
+    			console.log(error);
           var s = new Setting();
           s.name = "hopper";
           s.value = "Hopper";
@@ -610,7 +633,11 @@ class ApplicationController extends EventEmitter {
               this.pos.SetEnabled(true);
             }
 
-            this.CreateLog("Érme eladás", LogType.sales, {grossPrice: this.settings.coinPrice});
+            var sl = new Beans.Log();
+            sl.grossPrice = parseFloat(this.settings.coinPrice);
+            sl.description = "Érme eladás"
+            sl.logType = LogType.sales;
+            this.daoCtx.Add(sl);
           }).catch((reason) => {
             this.pos.NotPassed();
             // var log = new Log();
@@ -754,7 +781,7 @@ class ApplicationController extends EventEmitter {
 
     }
 
-    this.coinCount += coinCount;
+    this.coinCount += parseFloat(coinCount);
 
     this.CreateLog(`Feltöltés ${coinCount} darab érmével. Számláló: ${salesCount} Feltöltés előtt: ${beforeFill}. Feltöltés után: ${this.coinCount}. Utolsó feltőltés előtt eladott darabszám: ${salesAfterLastFill}`
       , LogType.fillUp);

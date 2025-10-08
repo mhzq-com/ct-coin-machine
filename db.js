@@ -7,7 +7,7 @@ var config = {
     , "dbName": process.env.DB_NAME || "coin"
     
 }
-
+console.log(process.env.DB_PASS, config);
 const dao = new Mysql(config.dbHost, config.dbUser, config.dbPassword, config.dbName);
 
 module.exports = dao;

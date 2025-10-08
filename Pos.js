@@ -6,10 +6,10 @@ const EventEmitter = require("events").EventEmitter;
 
 
 const ENABLE_GPIO = parseInt(process.env.ENABLE_GPIO) > 0 || false;
+var {Gpio} = require('@mhzq/mhzq-gpio');
 if (ENABLE_GPIO) {
-    const Gpio = require('onoff').Gpio;
+    
 }
-
 
 const MoneraCommands = {
     PASSED: "PASSED",
@@ -153,8 +153,8 @@ class Nayax extends EventEmitter {
         this.isEnabled = true;
 
         if (ENABLE_GPIO) {
-            this.enableGpio = new Gpio(8, "out");
-            this.watchGpio = new Gpio(25, "in", "both");
+            this.enableGpio = new Gpio(8, { direction: "out" });
+            this.watchGpio = new Gpio(25, { direction: "in" });
         }
 
     }
@@ -165,11 +165,8 @@ class Nayax extends EventEmitter {
 
             this.SetEnabled(true);
             if (ENABLE_GPIO) {
-                this.watchGpio.watch((err, value) => {
-                    if (err) {
-                        return;
-                    }
-
+                this.watchGpio.watch((value) => {
+                    
                     if (!this.isEnabled) {
                         return;
                     }
@@ -228,7 +225,7 @@ class Nayax extends EventEmitter {
     SetEnabled(isEnabled) {
         this.isEnabled = isEnabled;
         if (ENABLE_GPIO) {
-            this.enableGpio.writeSync(isEnabled ? 1 : 0);
+            this.enableGpio.write(isEnabled ? 1 : 0);
         }
     }
 

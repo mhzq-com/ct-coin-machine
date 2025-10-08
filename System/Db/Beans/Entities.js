@@ -24,9 +24,11 @@ class Log {
         this.description = undefined;
         this.createDate =  new Date();
         this.isSent = 0;
+        this.grossPrice = undefined;
     }
 
 }
+
 
 
 class Setting {

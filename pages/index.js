@@ -32,10 +32,21 @@ const Home = function ({ user }) {
 
     var title = "Dashboard";
 
+    
+    const now = new Date();
+
+    // előző hónap első napja
+    const firstDayPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    // előző hónap utolsó napja
+    const lastDayPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
 
     const [info, setInfo] = useState(undefined);
     const [time, setTime] = useState(new Date().toLocaleString());
     const [fillUpCount, setFillUpCount] = useState(1);
+    const [dateFrom, setDateFrom] = useState((firstDayPrevMonth).toLocaleDateString().replaceAll('.', '').replaceAll(' ', '-'));
+    const [dateTo, setDateTo] = useState((lastDayPrevMonth).toLocaleDateString().replaceAll('.', '').replaceAll(' ', '-'));
 
 
     useEffect(() => {
@@ -48,7 +59,7 @@ const Home = function ({ user }) {
             // setTime(new Date(data).toLocaleDateString());
         });
 
-        socket.on('coinCount', function (data) { 
+        socket.on('coinCount', function (data) {
             alert(`Kidobott érmék darabszáma: ${data}`);
         });
 
@@ -150,13 +161,13 @@ const Home = function ({ user }) {
                 , credentials: "include"
                 , body: JSON.stringify({ coinCount: coinCount })
             });
-        if(res.ok){
+        if (res.ok) {
             var data = await res.json();
-            
-            UIkit.notification(`Feltöltés utáni darabszám: ${data}`, {status: "success"});
+
+            UIkit.notification(`Feltöltés utáni darabszám: ${data}`, { status: "success" });
         } else {
             res = await res.json();
-            UIkit.notification(`Feltöltés hiba: ${res.message}`, {status: "danger"});
+            UIkit.notification(`Feltöltés hiba: ${res.message}`, { status: "danger" });
         }
 
     }
@@ -178,12 +189,12 @@ const Home = function ({ user }) {
                 , headers: { "Content-Type": "application/json" }
                 , credentials: "include"
             });
-        if(res.ok){
-            
-            UIkit.notification(`Rendszerfrissítés sikeres! Újraindítás szükséges!`, {status: "success"});
+        if (res.ok) {
+
+            UIkit.notification(`Rendszerfrissítés sikeres! Újraindítás szükséges!`, { status: "success" });
         } else {
             res = await res.json();
-            UIkit.notification(`Rendszerfrissítés hiba: ${res.message}`, {status: "danger"});
+            UIkit.notification(`Rendszerfrissítés hiba: ${res.message}`, { status: "danger" });
         }
 
     }
@@ -205,14 +216,46 @@ const Home = function ({ user }) {
                 , headers: { "Content-Type": "application/json" }
                 , credentials: "include"
             });
-        if(res.ok){
-            
-            UIkit.notification(`Újraindítás 5mp múlva!`, {status: "success"});
+        if (res.ok) {
+
+            UIkit.notification(`Újraindítás 5mp múlva!`, { status: "success" });
         } else {
             res = await res.json();
-            UIkit.notification(`Újraindítás hiba: ${res.message}`, {status: "danger"});
+            UIkit.notification(`Újraindítás hiba: ${res.message}`, { status: "danger" });
         }
 
+    }
+
+    async function getStat(e){
+        e.preventDefault();
+        var data = {
+            dateFrom: dateFrom
+            , dateTo: dateTo
+        }
+
+        var res = await fetch("/api/getStat",
+            {
+                method: "POST"
+                , headers: { "Content-Type": "application/json" }
+                , credentials: "include"
+                , body: JSON.stringify(data)
+            });
+        if (res.ok) {
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "export.csv";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            
+        } else {
+            res = await res.json();
+            UIkit.notification(`Újraindítás hiba: ${res.message}`, { status: "danger" });
+        }
     }
 
     return (<AuthReqPage title={title} user={user}>
@@ -228,10 +271,10 @@ const Home = function ({ user }) {
                 </>
             )}
 
-            {info && (
 
 
-                <div className="uk-flex">
+            <div className="uk-flex">
+                {info && (
 
                     <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
 
@@ -244,65 +287,85 @@ const Home = function ({ user }) {
 
                         </div>
                     </div>
-                    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
 
-                        <div className="card-body">
-                            <h5 className="card-title">Érme kidobás teszt</h5>
-                            <p className="card-text">Az érme kidobás teszttel fizetés nélkül ellenőrizhető, hogy az érme kidobódik
-                            </p>
-                            <button id="coinDropTest" className="uk-button uk-button-primary" onClick={coinDropTest}>Érme kidobás teszt</button>
-                        </div>
-                    </div>
-                    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+                )}
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
 
-                        <div className="card-body">
-                            <h5 className="card-title">Ürítés</h5>
-                            <p className="card-text">Ürítéssel a teljes tartalmat kidobja a gép, valamint megszámolja hány darab
-                                volt benne.</p>
-                            <button id="emptyHopper" className="uk-button uk-button-primary" onClick={emptyHopper}>Ürítés</button>
-                        </div>
-                    </div>
-                    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
-
-                        <div className="card-body">
-                            <h5 className="card-title">Feltöltés</h5>
-                            <p className="card-text">Feltöltheted érmékkel az eszközt</p>
-                            <div className="form-group row">
-                                <div className="uk-flex uk-flex-middle">
-                                    {/* <input className="uk-input" type="number" value="1" min="1" max="1000" step="1" /><span>db</span> */}
-                                    <Input className="uk-input" type="number" value={fillUpCount} onChange={(e) => { setFillUpCount(e.target.value) }} />
-                                </div>
-
+                    <div className="card-body">
+                        <form onSubmit={getStat}>
+                            <h5 className="card-title">Lekérdezés</h5>
+                            <p>Lekérdezhetjük két dátum közötti összes értékesítést és egy összesítést</p>
+                            <div>
+                                <label for="dateFrom" className="card-text">Dátum -tól: </label>
+                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date"  onChange={(e) => setDateFrom(e.target.value)} value={dateFrom} />
                             </div>
-                            <button id="fillUp" className="uk-button uk-button-success" onClick={fillUp}>Feltöltés</button>
-                        </div>
-                    </div>
-
-                    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
-
-                        <div className="card-body">
-                            <h5 className="card-title">Rendszerfrissítés</h5>
-                            <p className="card-text">Frissítheted az eszköz rendszerét ha van új csomag</p>
-                            <div className="form-group row">
-                                <div className="col-auto">Verzió:</div>
-                                <div className="col">{info.package.version}</div>
-
+                            <div>
+                                <label for="dateFrom" className="card-text">Dátum -ig: </label>
+                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date" onChange={(e) => setDateTo(e.target.value)} value={dateTo}/>
                             </div>
-                            <button id="update" className="uk-button uk-button-secondary" onClick={update}>Frissítés</button>
-                        </div>
+                            <button className="uk-button uk-button-primary" type="submit">Lekérdezés</button>
+                        </form>
                     </div>
-                    <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
-
-                        <div className="card-body">
-                            <h5 className="card-title">Újraindítás</h5>
-                            <p className="card-text">Eszköz újraindítása</p>
-
-                            <button id="restart" className="uk-button uk-button-danger" onClick={restart}>Újraindítás</button>
-                        </div>
-                    </div>
-
                 </div>
-            )}
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+
+                    <div className="card-body">
+                        <h5 className="card-title">Érme kidobás teszt</h5>
+                        <p className="card-text">Az érme kidobás teszttel fizetés nélkül ellenőrizhető, hogy az érme kidobódik
+                        </p>
+                        <button id="coinDropTest" className="uk-button uk-button-primary" onClick={coinDropTest}>Érme kidobás teszt</button>
+                    </div>
+                </div>
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+
+                    <div className="card-body">
+                        <h5 className="card-title">Ürítés</h5>
+                        <p className="card-text">Ürítéssel a teljes tartalmat kidobja a gép, valamint megszámolja hány darab
+                            volt benne.</p>
+                        <button id="emptyHopper" className="uk-button uk-button-primary" onClick={emptyHopper}>Ürítés</button>
+                    </div>
+                </div>
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+
+                    <div className="card-body">
+                        <h5 className="card-title">Feltöltés</h5>
+                        <p className="card-text">Feltöltheted érmékkel az eszközt</p>
+                        <div className="form-group row">
+                            <div className="uk-flex uk-flex-middle">
+                                {/* <input className="uk-input" type="number" value="1" min="1" max="1000" step="1" /><span>db</span> */}
+                                <Input className="uk-input" type="number" value={fillUpCount} onChange={(e) => { setFillUpCount(e.target.value) }} />
+                            </div>
+
+                        </div>
+                        <button id="fillUp" className="uk-button uk-button-success" onClick={fillUp}>Feltöltés</button>
+                    </div>
+                </div>
+
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+
+                    <div className="card-body">
+                        <h5 className="card-title">Rendszerfrissítés</h5>
+                        <p className="card-text">Frissítheted az eszköz rendszerét ha van új csomag</p>
+                        <div className="form-group row">
+                            <div className="col-auto">Verzió:</div>
+                            {info && (
+                            <div className="col">{info.package.version}</div>
+                            )}
+                        </div>
+                        <button id="update" className="uk-button uk-button-secondary" onClick={update}>Frissítés</button>
+                    </div>
+                </div>
+                <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
+
+                    <div className="card-body">
+                        <h5 className="card-title">Újraindítás</h5>
+                        <p className="card-text">Eszköz újraindítása</p>
+
+                        <button id="restart" className="uk-button uk-button-danger" onClick={restart}>Újraindítás</button>
+                    </div>
+                </div>
+
+            </div>
 
 
 

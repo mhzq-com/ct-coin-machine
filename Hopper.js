@@ -3,8 +3,9 @@ const Beans = require("./System/Db/Beans/Entities.js")
 const EventEmitter = require("events").EventEmitter;
 
 const ENABLE_GPIO = parseInt(process.env.ENABLE_GPIO) > 0 || false;
+var {Gpio} = require('@mhzq/mhzq-gpio');
 if (ENABLE_GPIO) {
-    const Gpio = require('onoff').Gpio;
+    
 }
 
 
@@ -67,11 +68,6 @@ class Hopper extends HopperAgent {
     constructor(controller, options) {
         super(controller);
 
-        // setInterval(() => {
-        //     var message = "A kidobásérzékelő több mint 1 másodperce jelez";
-        //     console.log(new Date().toLocaleString(), message);
-        //     this.emit("rawOutputError", {message: message});
-        // }, 10000);
 
         var opts = {
             gpio: {
@@ -93,17 +89,19 @@ class Hopper extends HopperAgent {
 
         if (ENABLE_GPIO) {
 
-            this.gpios.in1 = new Gpio(opts.gpio.in1, "out");
-            this.gpios.in2 = new Gpio(opts.gpio.in2, "out");
-            this.gpios.in3 = new Gpio(opts.gpio.in3, "out");
 
-            this.gpios.motor = new Gpio(opts.gpio.motor, "out");
+            this.gpios.in1 = new Gpio(opts.gpio.in1, { direction: "out" });
+			
+            this.gpios.in2 = new Gpio(opts.gpio.in2, { direction: "out" });
+            this.gpios.in3 = new Gpio(opts.gpio.in3, { direction: "out" });
+
+            this.gpios.motor = new Gpio(opts.gpio.motor, { direction: "out" });
             // this.gpios.lowLevelSense = new Gpio(opts.gpio.lowLevelSense, "in", "both");
-            this.gpios.rawOutput = new Gpio(opts.gpio.rawOutput, "in", "both");
-            this.gpios.securityOutput = new Gpio(opts.gpio.securityOutput, "out");
+            this.gpios.rawOutput = new Gpio(opts.gpio.rawOutput, { direction: "in" });
+            this.gpios.securityOutput = new Gpio(opts.gpio.securityOutput, { direction: "out" });
 
-            this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, "out");
-            this.gpios.coinTrayLed = new Gpio(opts.gpio.coinTrayLed, "out");
+            this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, { direction: "out" });
+            this.gpios.coinTrayLed = new Gpio(opts.gpio.coinTrayLed, { direction: "out" });
 
 
             /** Actually dropping out a coin */
@@ -111,22 +109,22 @@ class Hopper extends HopperAgent {
             this.in3Timeout = undefined;
             this.motorTimeout = undefined;
 
-            // this.gpios.in1.writeSync(0);
-            // this.gpios.in1.writeSync(1);
-            // this.gpios.in2.writeSync(0);
-            // this.gpios.in3.writeSync(0);
+            // this.gpios.in1.write(0);
+            // this.gpios.in1.write(1);
+            // this.gpios.in2.write(0);
+            // this.gpios.in3.write(0);
 
             this.SetMode(HopperMode.CoinCounting);
 
-            this.gpios.powerOnLed.writeSync(1);
+            this.gpios.powerOnLed.write(1);
 
 
-            // this.gpios.in1.writeSync(1);
-            // this.gpios.in2.writeSync(0);
-            // this.gpios.in3.writeSync(0);
+            // this.gpios.in1.write(1);
+            // this.gpios.in2.write(0);
+            // this.gpios.in3.write(0);
 
             /** Check level in the machine */
-            // var lowLevel = this.gpios.lowLevelSense.readSync();
+            // var lowLevel = this.gpios.lowLevelSense.read();
             // if (lowLevel == 1) {
             //     setTimeout(() => {
 
@@ -135,10 +133,8 @@ class Hopper extends HopperAgent {
             // }
 
             //@TODO feltöltésig ne vegyük figyelembe
-            // this.gpios.lowLevelSense.watch(debounce((err, value) => {
-            //     if (err) {
-            //         console.log(err);
-            //     }
+            // this.gpios.lowLevelSense.watch(debounce((value) => {
+          
             //     if (value == 1) {
             //         //Kiesett egy érme
             //         console.log("Kevés az érme");
@@ -154,7 +150,7 @@ class Hopper extends HopperAgent {
 
             this.gpios.rawOutput.watch(
                 //debounce(
-                (err, value) => {
+                (value) => {
                     if (err) {
                         console.log(err);
                     }
@@ -165,7 +161,7 @@ class Hopper extends HopperAgent {
 
                         //egy másodpercnél nem lehet tovább kinn a jel ezen a gpio-n (egyébként egy bogár van az érzékelő előtt)
                         // bugWatcher = setTimeout(() => {
-                        //     if(this.gpios.rawOutput.readSync() == 1){
+                        //     if(this.gpios.rawOutput.read() == 1){
                         //         var message = "A kidobásérzékelő több mint 1 másodperce jelez! Lehetséges elakadás!";
                         //         console.log(new Date().toLocaleString(), message);
                         //         this.emit("rawOutputError", {message: message});
@@ -223,14 +219,14 @@ class Hopper extends HopperAgent {
 
 
             function coinDrop() {
-                this.gpios.in3.writeSync(0);
-                this.gpios.motor.writeSync(0);
+                this.gpios.in3.write(0);
+                this.gpios.motor.write(0);
 
-                this.gpios.coinTrayLed.writeSync(1);
+                this.gpios.coinTrayLed.write(1);
 
                 setTimeout(() => {
 
-                    this.gpios.coinTrayLed.writeSync(0);
+                    this.gpios.coinTrayLed.write(0);
                 }, 5000);
 
                 if (this.motorTimeout !== undefined) {
@@ -247,8 +243,8 @@ class Hopper extends HopperAgent {
             this.once("coinDrop", coinDrop);
 
             this.coinCounting = true;
-            this.gpios.in3.writeSync(1);
-            this.gpios.motor.writeSync(1);
+            this.gpios.in3.write(1);
+            this.gpios.motor.write(1);
 
             if (this.in3Timeout !== undefined) {
                 clearTimeout(this.in3Timeout);
@@ -262,7 +258,7 @@ class Hopper extends HopperAgent {
 
             this.in3Timeout = setTimeout(() => {
 
-                this.gpios.in3.writeSync(0);
+                this.gpios.in3.write(0);
 
             }, 10);
 
@@ -271,7 +267,7 @@ class Hopper extends HopperAgent {
             /** Runs max 30 seconds */
             this.motorTimeout = setTimeout(() => {
                 this.coinCounting = false;
-                this.gpios.motor.writeSync(0);
+                this.gpios.motor.write(0);
 
                 /** There is no coin in the machine and we didn't noticed! So set to quantity zero + alert */
                 this.emit("emptyAlert", {});
@@ -303,7 +299,7 @@ class Hopper extends HopperAgent {
                 //starts to count;
 
 
-                this.gpios.motor.writeSync(1);
+                this.gpios.motor.write(1);
 
                 var coinCount = 0;
 
@@ -327,7 +323,7 @@ class Hopper extends HopperAgent {
 
                         console.log((new Date()).toLocaleString(), `motor leállt`);
                         this.coinCounting = false;
-                        this.gpios.motor.writeSync(0);
+                        this.gpios.motor.write(0);
 
                         this.removeListener("coinDrop", coinDrop);
 
@@ -346,7 +342,7 @@ class Hopper extends HopperAgent {
 
                     console.log((new Date()).toLocaleString(), `motor leállt`);
                     this.coinCounting = false;
-                    this.gpios.motor.writeSync(0);
+                    this.gpios.motor.write(0);
 
                     this.emit("coinCount", coinCount);
 
@@ -377,28 +373,28 @@ class Hopper extends HopperAgent {
             }
             switch (mode) {
                 case HopperMode.DirectSwitching:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.LogicControl:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.CoinCounting:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(0);
                     break;
                 case HopperMode.Reset:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                 default:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                     break;
             }
 
@@ -407,6 +403,10 @@ class Hopper extends HopperAgent {
             }, 100);
         });
 
+    }
+
+    async SetRolled(isRolled) {
+        return true;
     }
 
 }
@@ -457,22 +457,22 @@ class HopperMH245CA extends HopperAgent {
         if (ENABLE_GPIO) {
 
 
-            this.gpios.power = new Gpio(opts.gpio.power, "out");
-            this.gpios.creditRelay = new Gpio(opts.gpio.creditRelay, "in");
-            this.gpios.hopperEmpty = new Gpio(opts.gpio.hopperEmpty, "in");
-            this.gpios.triggerIn = new Gpio(opts.gpio.triggerIn, "out");
+            this.gpios.power = new Gpio(opts.gpio.power, { direction: "out" });
+            this.gpios.creditRelay = new Gpio(opts.gpio.creditRelay, { direction: "in" });
+            this.gpios.hopperEmpty = new Gpio(opts.gpio.hopperEmpty, { direction: "in" });
+            this.gpios.triggerIn = new Gpio(opts.gpio.triggerIn, { direction: "out" });
 
-            this.gpios.rollLed = new Gpio(opts.gpio.rollLed, "out");
-            this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, "out");
-            this.gpios.coinDropped = new Gpio(opts.gpio.coinDropped, "in", "both");
-            this.gpios.coinRoll = new Gpio(opts.gpio.coinRoll, "in", "both");
+            this.gpios.rollLed = new Gpio(opts.gpio.rollLed, { direction: "out" });
+            this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, { direction: "out" });
+            this.gpios.coinDropped = new Gpio(opts.gpio.coinDropped, { direction: "in" });
+            this.gpios.coinRoll = new Gpio(opts.gpio.coinRoll, { direction: "in" });
 
 
-            this.gpios.power.writeSync(1);
+            this.gpios.power.write(1);
 
 
             /** Check level in the machine */
-            var lowLevel = this.gpios.hopperEmpty.readSync();
+            var lowLevel = this.gpios.hopperEmpty.read();
             if (lowLevel == 1) {
                 setTimeout(() => {
 
@@ -481,10 +481,7 @@ class HopperMH245CA extends HopperAgent {
             }
 
             //@TODO feltöltésig ne vegyük figyelembe
-            this.gpios.hopperEmpty.watch(debounce((err, value) => {
-                if (err) {
-                    console.log(err);
-                }
+            this.gpios.hopperEmpty.watch(debounce((value) => {
                 if (value == 1) {
                     //Kiesett egy érme
                     console.log("Kevés az érme");
@@ -512,60 +509,16 @@ class HopperMH245CA extends HopperAgent {
 
             this.gpios.coinDropped.watch(
                 //debounce(
-                (err, value) => {
-                    if (err) {
-                        console.log(err);
-                    }
+                (value) => {
                     if (value == 1) {
                         this.emit("coinDrop", {});
 
-                        // //Kiesett egy érme
-                        // //Azért vizsgálunk 1-est, hogy a felfutó élre dobja ki az érmét -----|_|--
-                        // // this.emit("coinDrop", {});
-
-                        // //egy másodpercnél nem lehet tovább kinn a jel ezen a gpio-n (egyébként egy bogár van az érzékelő előtt)
-                        // // bugWatcher = setTimeout(() => {
-                        // //     if(this.gpios.rawOutput.readSync() == 1){
-                        // //         var message = "A kidobásérzékelő több mint 1 másodperce jelez! Lehetséges elakadás!";
-                        // //         console.log(new Date().toLocaleString(), message);
-                        // //         this.emit("rawOutputError", {message: message});
-                        // //     }
-                        // // }, 1000);
-
-                        // if(startHrTime){
-
-                        //     var endTime = process.hrtime(startHrTime);
-                        //     var endTimeMs = endTime[0] * 1000 + endTime[1] / 1000000
-                        //     let lowerLimitMs = 10;
-                        //     let upperLimitMs = 120;
-                        // 	console.log(new Date().toLocaleString(), `Érmekidobás ${endTimeMs} ms`);
-                        //     if (endTimeMs > lowerLimitMs && endTimeMs < upperLimitMs) {
-
-                        //         this.emit("coinDrop", {});
-                        //     } else {
-                        //         var message = `A kidobásérzékelő időintervallumon (${lowerLimitMs} - ${upperLimitMs} ms) kívül! Lehetséges elakadás!`;
-                        //         console.log(new Date().toLocaleString(), message);
-                        //         this.emit("rawOutputError", { message: message });
-                        //     }
-                        //     startHrTime = undefined;
-                        // } else {
-                        //     var message = `A kidobásérzékelő nincs lefutó él (startHrTime)! Lehetséges elakadás!`;
-                        //     console.log(new Date().toLocaleString(), message);
-                        //     //this.emit("rawOutputError", { message: message });
-                        // }
-
-                    } else {
-                        // startHrTime = process.hrtime();
-                        // // if(bugWatcher){
-                        // //     clearTimeout(bugWatcher);
-                        // //     bugWatcher = undefined;
-                        // // }
-                    }
+                    } 
                 }
                 //, 10)
             );
 
-            var rolled = this.gpios.coinRoll.readSync();
+            var rolled = this.gpios.coinRoll.read();
             console.log("rolled", rolled == 1);
             if (rolled == 1) {
                 this.SetRolled(true);
@@ -573,18 +526,12 @@ class HopperMH245CA extends HopperAgent {
 
             this.gpios.coinRoll.watch(
                 //debounce(
-                (err, value) => {
-                    if (err) {
-                        console.log(err);
-                    }
-                    // console.log(value);
+                (value) => {
                     if (value == 1) {
                         this.SetRolled(true);
 
 
-                    } else {
-
-                    }
+                    } 
                 }
             );
 
@@ -593,8 +540,8 @@ class HopperMH245CA extends HopperAgent {
 
     async SetRolled(isRolled) {
 
-        this.gpios.rollLed.writeSync(isRolled ? 0 : 1);
-        this.gpios.powerOnLed.writeSync(isRolled ? 1 : 0);
+        this.gpios.rollLed.write(isRolled ? 0 : 1);
+        this.gpios.powerOnLed.write(isRolled ? 1 : 0);
         this.isRolled = isRolled;
 
         this.emit("rolledChange", this.isRolled);
@@ -643,7 +590,7 @@ class HopperMH245CA extends HopperAgent {
 
 
             function coinDrop() {
-                this.gpios.triggerIn.writeSync(0);
+                this.gpios.triggerIn.write(0);
 
                 this.SetRolled(false);
 
@@ -669,10 +616,10 @@ class HopperMH245CA extends HopperAgent {
 
             this.coinCounting = true;
 
-            this.gpios.triggerIn.writeSync(1);
+            this.gpios.triggerIn.write(1);
 
             // setTimeout(() => {
-            // this.gpios.triggerIn.writeSync(0);
+            // this.gpios.triggerIn.write(0);
             // }, 20);
 
 
@@ -684,7 +631,7 @@ class HopperMH245CA extends HopperAgent {
             /** Runs max 30 seconds */
             this.motorTimeout = setTimeout(() => {
                 this.coinCounting = false;
-                this.gpios.triggerIn.writeSync(0);
+                this.gpios.triggerIn.write(0);
 
                 /** There is no coin in the machine and we didn't noticed! So set to quantity zero + alert */
                 this.emit("emptyAlert", {});
@@ -721,28 +668,28 @@ class HopperMH245CA extends HopperAgent {
         return new Promise((resolve, reject) => {
             switch (mode) {
                 case HopperMode.DirectSwitching:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.LogicControl:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.CoinCounting:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(0);
                     break;
                 case HopperMode.Reset:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                 default:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                     break;
             }
 
@@ -777,15 +724,15 @@ class MiniHopper extends HopperAgent {
 
         this.gpios = {};
 
-        this.gpios.power = new Gpio(opts.gpio.power, "out");
-        this.gpios.triggerIn = new Gpio(opts.gpio.triggerIn, "out");
+        this.gpios.power = new Gpio(opts.gpio.power, { direction: "out" });
+        this.gpios.triggerIn = new Gpio(opts.gpio.triggerIn, { direction: "out" });
 
-        this.gpios.rollLed = new Gpio(opts.gpio.rollLed, "out");
-        this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, "out");
-        this.gpios.coinDropped = new Gpio(opts.gpio.coinDropped, "in", "both");
-        this.gpios.coinRoll = new Gpio(opts.gpio.coinRoll, "in", "both");
+        this.gpios.rollLed = new Gpio(opts.gpio.rollLed, { direction: "out" });
+        this.gpios.powerOnLed = new Gpio(opts.gpio.powerOnLed, { direction: "out" });
+        this.gpios.coinDropped = new Gpio(opts.gpio.coinDropped, { direction: "in" });
+        this.gpios.coinRoll = new Gpio(opts.gpio.coinRoll, { direction: "in" });
 
-        this.gpios.power.writeSync(1);
+        this.gpios.power.write(1);
 
         (async () => {
             var errors = await this.controller.daoCtx.GetList(Beans.Error, { errorType: "notRolled" });
@@ -803,20 +750,16 @@ class MiniHopper extends HopperAgent {
 
         this.gpios.coinDropped.watch(
             //debounce(
-            (err, value) => {
-                if (err) {
-                    console.log(err);
-                }
+            (value) => {
                 if (value == 1) {
                     this.emit("coinDrop", {});
 
-                } else {
-                }
+                } 
             }
             //, 10)
         );
 
-        var rolled = this.gpios.coinRoll.readSync();
+        var rolled = this.gpios.coinRoll.read();
         console.log("rolled", rolled == 1);
         if (rolled == 1) {
             this.SetRolled(true);
@@ -824,18 +767,12 @@ class MiniHopper extends HopperAgent {
 
         this.gpios.coinRoll.watch(
             //debounce(
-            (err, value) => {
-                if (err) {
-                    console.log(err);
-                }
-                // console.log(value);
+            (value) => {
                 if (value == 1) {
                     this.SetRolled(true);
 
 
-                } else {
-
-                }
+                } 
             }
         );
 
@@ -845,8 +782,8 @@ class MiniHopper extends HopperAgent {
 
     async SetRolled(isRolled) {
 
-        this.gpios.rollLed.writeSync(isRolled ? 0 : 1);
-        this.gpios.powerOnLed.writeSync(isRolled ? 1 : 0);
+        this.gpios.rollLed.write(isRolled ? 0 : 1);
+        this.gpios.powerOnLed.write(isRolled ? 1 : 0);
         this.isRolled = isRolled;
 
         this.emit("rolledChange", this.isRolled);
@@ -895,7 +832,7 @@ class MiniHopper extends HopperAgent {
 
 
             function coinDrop() {
-                this.gpios.triggerIn.writeSync(0);
+                this.gpios.triggerIn.write(0);
 
                 this.SetRolled(false);
 
@@ -921,10 +858,10 @@ class MiniHopper extends HopperAgent {
 
             this.coinCounting = true;
 
-            this.gpios.triggerIn.writeSync(1);
+            this.gpios.triggerIn.write(1);
 
             // setTimeout(() => {
-            // this.gpios.triggerIn.writeSync(0);
+            // this.gpios.triggerIn.write(0);
             // }, 20);
 
 
@@ -936,7 +873,7 @@ class MiniHopper extends HopperAgent {
             /** Runs max 30 seconds */
             this.motorTimeout = setTimeout(() => {
                 this.coinCounting = false;
-                this.gpios.triggerIn.writeSync(0);
+                this.gpios.triggerIn.write(0);
 
                 /** There is no coin in the machine and we didn't noticed! So set to quantity zero + alert */
                 this.emit("emptyAlert", {});
@@ -973,28 +910,28 @@ class MiniHopper extends HopperAgent {
         return new Promise((resolve, reject) => {
             switch (mode) {
                 case HopperMode.DirectSwitching:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.LogicControl:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(1);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(1);
                     break;
                 case HopperMode.CoinCounting:
-                    this.gpios.in1.writeSync(0);
-                    this.gpios.in2.writeSync(1);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(0);
+                    this.gpios.in2.write(1);
+                    this.gpios.in3.write(0);
                     break;
                 case HopperMode.Reset:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                 default:
-                    this.gpios.in1.writeSync(1);
-                    this.gpios.in2.writeSync(0);
-                    this.gpios.in3.writeSync(0);
+                    this.gpios.in1.write(1);
+                    this.gpios.in2.write(0);
+                    this.gpios.in3.write(0);
                     break;
             }
 
