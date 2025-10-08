@@ -493,7 +493,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
     return new Promise((resolve, reject) => {
 
       // Nyissuk meg a log fájlt append módban
-      const logStream = fs.createWriteStream(LOG_FILE, { flags: "a" });
+      const logStream = fs.createWriteStream(path.join(process.cwd(), "update.log"), { flags: "a" });
       logStream.on("error", (err) => {
         console.error("Log fájl írási hiba:", err);
       });
