@@ -501,7 +501,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
       writeWithTimestamp(logStream, `--- UPDATE START ---`);
       writeWithTimestamp(logStream, `Running script: ${updateScriptPath}`);
 
-      const child = spawn(updateScriptPath, {
+      const child = spawn("bash", [updateScriptPath], {
         shell: true, // kell a .sh vagy .bat futtatásához
         env: {
           ...process.env,
