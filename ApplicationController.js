@@ -746,6 +746,8 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
         } catch (err) {
         }
 
+        this.emit("initEnd");
+
       } catch (reason) {
         if (reason.code == 'ECONNREFUSED' || reason.code == "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR") {
           //

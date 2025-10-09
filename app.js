@@ -126,6 +126,10 @@ function initializeSocketClient(settings){
 
 var appControl = AppControlInstance;
 
+appControl.on("initEnd", () => {
+    initializeSocketClient(appControl.settings);   
+});
+
 // appControl.Init().then(() => {
 
     nextApp.prepare().then(async () => {
@@ -191,7 +195,7 @@ var appControl = AppControlInstance;
             console.log(`> Ready on http://localhost:${port}`);
         });
 
-        initializeSocketClient(appControl.settings)
+        
     });
 // }
 

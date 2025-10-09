@@ -4,10 +4,15 @@ echo "Frissítés indítása..." #>> update.log
 echo "Használt GIT TOKEN: $GIT_TOKEN" #>> update.log
 cd /home/pi/ct-coin-machine
 
+echo "GIT frissítése ..." #>> update.log
 git pull https://$GIT_TOKEN@github.com/mhzq-com/ct-coin-machine.git #>> update.log 2>&1
-npm install >> update.log 2>&1
-npm run build >> update.log 2>&1
+echo "Csomagok frissítése ..." #>> update.log
+npm install #>> update.log 2>&1
+echo "Build indítása ..." #>> update.log
+npm run build #>> update.log 2>&1
+echo "Futó folyamatok lezárása ..." #>> update.log
 pkill -f "node"
+echo "Szerver újraindítása ..." #>> update.log
 nohup npm start
 #pm2 restart your-app-name >> update.log 2>&1  # vagy az alkalmazásod újraindítása
 
