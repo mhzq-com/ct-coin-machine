@@ -1,6 +1,6 @@
 {
   "name": "@mhzq/ct-coin-machine",
-  "version": "2.0.10",
+  "version": "2.0.11",
   "description": "Coin Machine",
   "main": "src/app.js",
   "scripts": {
