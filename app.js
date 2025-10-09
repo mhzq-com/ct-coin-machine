@@ -173,9 +173,9 @@ var appControl = AppControlInstance;
             io.sockets.emit("error", data);
         });
 
-        appControl.on("updateProcess", (data) => {
+        appControl.on("updateProgress", (data) => {
 
-            io.sockets.emit("updateProcess", data);
+            io.sockets.emit("updateProgress", data);
         });
 
 

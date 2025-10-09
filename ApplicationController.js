@@ -532,7 +532,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
       child.stderr.on("data", (data) => {
         const text = data.toString();
         this.emit('updateProgress', { type: "stderr", data: text });
-        writeWithTimestamp(logStream, `STDERR: ${txt}`);
+        writeWithTimestamp(logStream, `STDERR: ${text}`);
       });
 
       child.on("error", (err) => {
