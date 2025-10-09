@@ -13,7 +13,7 @@ npm run build #>> update.log 2>&1
 echo "Futó folyamatok lezárása ..." #>> update.log
 pkill -f "node"
 echo "Szerver újraindítása ..." #>> update.log
-nohup npm start
+nohup npm run start &
 #pm2 restart your-app-name >> update.log 2>&1  # vagy az alkalmazásod újraindítása
 
 echo "Frissítés befejezve: $(date)" #>> update.log
