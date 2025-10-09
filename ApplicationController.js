@@ -862,7 +862,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
     //Get the current coinCount from the coin db
     var beforeFill = this.coinCount;
     var salesAfterLastFill = 0;
-    var salesCount = await this.GetSalesCount();
+//    var salesCount = await this.GetSalesCount();
 
     try {
       var sales = await this.daoCtx.GetRows("SELECT COUNT(id) AS salesAfterLastFill FROM log WHERE createDate > IFNULL((SELECT createDate FROM log WHERE logType = 'fillUp' ORDER BY id DESC LIMIT 1), '2020-01-01') AND logType = 'sales';");
@@ -873,7 +873,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
     this.coinCount += parseFloat(coinCount);
 
-    this.CreateLog(`Feltöltés ${coinCount} darab érmével. Számláló: ${salesCount} Feltöltés előtt: ${beforeFill}. Feltöltés után: ${this.coinCount}. Utolsó feltőltés előtt eladott darabszám: ${salesAfterLastFill}`
+    this.CreateLog(`Feltöltés ${coinCount} darab érmével. Feltöltés előtt: ${beforeFill}. Feltöltés után: ${this.coinCount}. Utolsó feltőltés előtt eladott darabszám: ${salesAfterLastFill}`
       , LogType.fillUp);
 
     this._SetCoinCount(this.coinCount);
