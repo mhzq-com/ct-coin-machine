@@ -1014,7 +1014,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
           resolve(dataRows.length);
         }
 
-
+        
         fetch(`${this.settings.url}/Control/CityMedia/Telemetry/Telemetry/AddTelemetryData/`, {
           method: "POST"
           , headers: {
@@ -1038,13 +1038,13 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
             message = JSON.parse(error.response.text).error_description;
 
           }
-          console.log((new Date()).toLocaleString(), "adatbeküldés sikertelen", message);
+          console.log((new Date()).toLocaleString(), "adatbeküldés sikertelen", message, this.settings.url);
           // this.SendDataResult(dataRows.length, error);
           reject(error, dataRows.length);
         });
 
       }).catch(error => {
-        //@todo
+        
         reject(error);
       });
     });
