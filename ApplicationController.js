@@ -735,8 +735,10 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
 
 
-
-        this.SendDataContinuousStart();
+        setTimeout(() => {
+          
+          this.SendDataContinuousStart();
+        }, 10000);
 
 
         try {
