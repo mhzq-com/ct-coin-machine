@@ -13,7 +13,6 @@ echo "Szerver újraindítás előkészítése..."
 # külön folyamatban, kis késleltetéssel indítja újra
 nohup bash -c "sleep 2 && cd /home/pi/ct-coin-machine && nohup npm run start &" >/dev/null 2>&1 &
 echo "Futó folyamatok lezárása ..." #>> update.log
-echo "Frissítés befejezve: $(date)" #>> update.log
-echo "OK"
+echo "✅ Frissítés befejezve: $(date)" #>> update.log
 pkill -f "node"
 #pm2 restart your-app-name >> update.log 2>&1  # vagy az alkalmazásod újraindítása

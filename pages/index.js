@@ -32,7 +32,7 @@ const Home = function ({ user }) {
 
     var title = "Dashboard";
 
-    
+
     const now = new Date();
 
     // előző hónap első napja
@@ -48,10 +48,22 @@ const Home = function ({ user }) {
     const [dateFrom, setDateFrom] = useState((firstDayPrevMonth).toLocaleDateString().replaceAll('.', '').replaceAll(' ', '-'));
     const [dateTo, setDateTo] = useState((lastDayPrevMonth).toLocaleDateString().replaceAll('.', '').replaceAll(' ', '-'));
 
+    const [updateProgress, setUpdateProgress] = useState({});
+    const updateProgressTypes = new Map([
+        ["stderr", "uk-text-danger"]
+        , ["error", "uk-text-danger"]
+        , ["stdout", ""]
+    ]);
+
 
     useEffect(() => {
 
         var socket = io.connect();
+
+        socket.on("updateProgress", (info) => {
+            console.log(info);
+            setUpdateProgress(info);
+        });
 
         socket.on('timeChange', function (data) { //Megjelenítjük az időt, ha állítani kell meg tudja tenni
             // console.log(data);
@@ -226,7 +238,7 @@ const Home = function ({ user }) {
 
     }
 
-    async function getStat(e){
+    async function getStat(e) {
         e.preventDefault();
         var data = {
             dateFrom: dateFrom
@@ -251,7 +263,7 @@ const Home = function ({ user }) {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
-            
+
         } else {
             res = await res.json();
             UIkit.notification(`Újraindítás hiba: ${res.message}`, { status: "danger" });
@@ -297,11 +309,11 @@ const Home = function ({ user }) {
                             <p>Lekérdezhetjük két dátum közötti összes értékesítést és egy összesítést</p>
                             <div>
                                 <label for="dateFrom" className="card-text">Dátum -tól: </label>
-                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date"  onChange={(e) => setDateFrom(e.target.value)} value={dateFrom} />
+                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date" onChange={(e) => setDateFrom(e.target.value)} value={dateFrom} />
                             </div>
                             <div>
                                 <label for="dateFrom" className="card-text">Dátum -ig: </label>
-                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date" onChange={(e) => setDateTo(e.target.value)} value={dateTo}/>
+                                <Input id="dateFrom" className={'uk-input'} name="dateFrom" type="date" onChange={(e) => setDateTo(e.target.value)} value={dateTo} />
                             </div>
                             <button className="uk-button uk-button-primary" type="submit">Lekérdezés</button>
                         </form>
@@ -349,10 +361,20 @@ const Home = function ({ user }) {
                         <div className="form-group row">
                             <div className="col-auto">Verzió:</div>
                             {info && (
-                            <div className="col">{info.package.version}</div>
+                                <div className="col">{info.package.version}</div>
                             )}
                         </div>
                         <button id="update" className="uk-button uk-button-secondary" onClick={update}>Frissítés</button>
+
+                        {updateProgress && (
+                            <>
+                            <div>Rendszer konzol output</div>
+                            <div className='uk-background-secondary uk-margin'>
+                                <div style={{ color: "white" }} className={updateProgressTypes.get(updateProgress.type)}>{updateProgress.data}</div>
+
+                            </div>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="uk-card uk-card-default uk-card-body uk-width-1-1@m" >
