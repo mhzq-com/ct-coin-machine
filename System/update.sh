@@ -8,7 +8,7 @@ git pull https://$GIT_TOKEN@github.com/mhzq-com/ct-coin-machine.git #>> update.l
 npm install >> update.log 2>&1
 npm run build >> update.log 2>&1
 pkill -f "node"
-nohup npm run start:prod
+nohup npm start
 #pm2 restart your-app-name >> update.log 2>&1  # vagy az alkalmazásod újraindítása
 
 echo "Frissítés befejezve: $(date)" #>> update.log
