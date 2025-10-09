@@ -2,11 +2,11 @@
 const Footer = ({ props }) => {
     return <footer>
         <a className="uk-text-center uk-align-center"
-            href="#"
+            href="http://mhzq.com"
             target="_blank"
             rel="noopener noreferrer"
         >
-            CM Coin Machine.  <i className="fa-solid fa-copyright"></i>
+            Powered by MHzQ Team. <br /> mhzq.com <i className="fa-solid fa-copyright"></i>
         </a>
     </footer>;
 
