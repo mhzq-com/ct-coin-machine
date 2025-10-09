@@ -542,7 +542,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
         reject(err);
       });
 
-      child.on("close", (code) => {
+      child.on("close", (code, signal) => {
         writeWithTimestamp(logStream, `--- UPDATE END --- Exit code: ${code} ${signal ? `Signal: ${signal}` : ""}`);
         logStream.end(); // lezárjuk a logot
         if (code === 0) {
