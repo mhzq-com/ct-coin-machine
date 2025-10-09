@@ -419,6 +419,17 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
    */
   Restart(timeout = 5) {
     return new Promise((resolve, reject) => {
+
+      resolve(`Újraindítás ütemezve ${timeout} mp múlva`);
+      setTimeout(() => {
+        const cmd = spawn("sudo", ["/sbin/reboot"]);
+
+        cmd.stdout.on("data", data => console.log("stdout:", data.toString()));
+        cmd.stderr.on("data", data => console.log("stderr:", data.toString()));
+        cmd.on("error", err => console.error("Reboot error:", err));
+
+      }, timeout * 1000);
+
       // var cmd = new Command("sudo shutdown", ["-r", "-t", "5"]);
       // cmd.exec(function (err, stdout, stderr) {
       //   if (err) {
@@ -428,20 +439,20 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
       //   resolve(stdout);
       // });
-      exec(`sudo shutdown -r -t 5`, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Hiba: ${error.message}`);
-          reject(new Error(error.message));
-          return;
-        }
-        if (stderr) {
-          console.error(`Stderr: ${stderr}`);
-          reject(new Error(stderr));
-          return;
-        }
-        console.log(`Újraindítás sikeres: ${stdout}`);
-        resolve(true);
-      });
+      // exec(`sudo shutdown -r +5`, (error, stdout, stderr) => {
+      //   if (error) {
+      //     console.error(`Hiba: ${error.message}`);
+      //     reject(new Error(error.message));
+      //     return;
+      //   }
+      //   if (stderr) {
+      //     console.error(`Stderr: ${stderr}`);
+      //     reject(new Error(stderr));
+      //     return;
+      //   }
+      //   console.log(`Újraindítás sikeres: ${stdout}`);
+      //   resolve(true);
+      // });
     });
 
 
@@ -514,7 +525,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
       child.stdout.on("data", (data) => {
         const text = data.toString();
         this.emit('updateProgress', { type: "stdout", data: text });
-        writeWithTimestamp(logStream, txt);
+        writeWithTimestamp(logStream, text);
 
       });
 
@@ -523,7 +534,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
         this.emit('updateProgress', { type: "stderr", data: text });
         writeWithTimestamp(logStream, `STDERR: ${txt}`);
       });
-      
+
       child.on("error", (err) => {
         this.emit('updateProgress', { type: "error", data: err.message });
         writeWithTimestamp(logStream, `ERROR: ${err.message}`);
