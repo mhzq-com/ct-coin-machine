@@ -13,7 +13,7 @@ const LogType = {
 
 class Log {
 
-
+    static entityName = "Log";
     constructor(){
         
 
@@ -33,7 +33,7 @@ class Log {
 
 class Setting {
 
-
+    static entityName = "Setting";
     constructor(){
         
 
@@ -53,7 +53,7 @@ const ErrorType = {
 
 class Error {
 
-
+    static entityName = "Error";
     constructor(){
         
 

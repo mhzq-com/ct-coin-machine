@@ -1148,6 +1148,10 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
     for (var i in data) {
       let setting = await this.daoCtx.Get(Setting, { name: i });
+      if(i == "pin"){
+        data[i] = crypto.createHash('sha256').update(data[i]).digest('hex');
+        //0eb1598c2177c525be55821a360741593a0a7d2137e1ad5c38d2e32c3a54df4b
+      }
       setting.value = data[i];
       if (this.settings[i]) {
         this.settings[i] = data[i];

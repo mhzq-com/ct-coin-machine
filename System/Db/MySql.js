@@ -224,7 +224,7 @@ class MySqlContext{
     Update(obj){
         var mysql = this;
 
-        var classname = obj.constructor.name.toLowerCase();
+        var classname = obj.constructor.entityName.toLowerCase();
         
         var table_name = this.con.escape(classname).toLowerCase().replace(new RegExp("[\']*", "g"), "");
 
@@ -265,7 +265,7 @@ class MySqlContext{
     Delete(obj){
         var mysql = this;
 
-        var classname = obj.constructor.name.toLowerCase();
+        var classname = obj.constructor.entityName.toLowerCase();
         
         var table_name = this.con.escape(classname).toLowerCase().replace(new RegExp("[\']*", "g"), "");
 
@@ -294,7 +294,7 @@ class MySqlContext{
         var mysql = this;
         var $this = new objectType();
 
-        var classname = objectType.name.toLowerCase();
+        var classname = objectType.entityName.toLowerCase();
         
         var table_name = this.con.escape(classname).toLowerCase().replace(new RegExp("[\']*", "g"), "");
         var s = "SELECT * FROM " + table_name + " WHERE 1=1 AND ";
@@ -346,7 +346,7 @@ class MySqlContext{
         var mysql = this;
         var $this = new objectType();
 
-        var classname = objectType.name.toLowerCase();
+        var classname = objectType.entityName.toLowerCase();
         
         var table_name = this.con.escape(classname).toLowerCase().replace(new RegExp("[\']*", "g"), "");
         var s = `SELECT T1.* FROM ${table_name} AS T1`;

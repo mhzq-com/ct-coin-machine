@@ -14,6 +14,8 @@ export default async function handler(req, res){
         return;
     }
     try {
+        // console.log(Entities[obj]);
+        
         res.json(await req.db.GetList(Entities[obj], req.body.params, req.body.orderby, req.body.limit));
     } catch (error) {
         res.status(500);
