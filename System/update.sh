@@ -1,7 +1,6 @@
 #!/bin/bash
 
 echo "Frissítés indítása..." #>> update.log
-echo "Használt GIT TOKEN: $GIT_TOKEN" #>> update.log
 cd /home/pi/ct-coin-machine
 
 echo "GIT frissítése ..." #>> update.log
