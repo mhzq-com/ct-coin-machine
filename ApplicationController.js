@@ -548,7 +548,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
         if (code === 0) {
           this.emit('updateProgress', { type: "stdout", data: "✅ Frissítés sikeres!" });
           console.log("✅ Frissítés sikeres!");
-          resolve(output);
+          resolve("✅ Frissítés sikeres!");
         } else {
           this.emit('updateProgress', { type: "stderr", data: `Frissítés hibával leállt (exit code: ${code})\n${output}` });
           reject(new Error(`Frissítés hibával leállt (exit code: ${code})\n${output}`));
