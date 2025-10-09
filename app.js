@@ -113,6 +113,11 @@ function initializeSocketClient(settings){
         socket.emit("coinCount", data);
     });
 
+    appControl.on("updateProgress", (data) => {
+
+        socket.emit("updateProgress", data);
+    });
+
     appControl.on("rawError", (data) => {
 
         socket.emit("rawError", data);
