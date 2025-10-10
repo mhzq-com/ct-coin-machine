@@ -736,7 +736,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
 
         setTimeout(() => {
-          
+
           this.SendDataContinuousStart();
         }, 10000);
 
@@ -862,7 +862,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
     //Get the current coinCount from the coin db
     var beforeFill = this.coinCount;
     var salesAfterLastFill = 0;
-//    var salesCount = await this.GetSalesCount();
+    //    var salesCount = await this.GetSalesCount();
 
     try {
       var sales = await this.daoCtx.GetRows("SELECT COUNT(id) AS salesAfterLastFill FROM log WHERE createDate > IFNULL((SELECT createDate FROM log WHERE logType = 'fillUp' ORDER BY id DESC LIMIT 1), '2020-01-01') AND logType = 'sales';");
@@ -1010,43 +1010,45 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
     }
 
     return new Promise((resolve, reject) => {
-      this.daoCtx.GetList(Log, { isSent: 0 }, null, { rowCount: rowCount }).then((dataRows) => {
+      this.daoCtx.GetList(Log, { isSent: 0 }, null, { rowCount: rowCount }).then(async (dataRows) => {
 
         if (dataRows.length == 0) {
           resolve(dataRows.length);
         }
 
-        
-        fetch(`${this.settings.url}/Control/CityMedia/Telemetry/Telemetry/AddTelemetryData/`, {
-          method: "POST"
-          , headers: {
-            Authorization: this.authorizationString
-            , "Content-Type": "application/json"
-          }
-          , body: JSON.stringify({ data: dataRows })
-        }
-        ).then(data => {
-          console.log((new Date()).toLocaleString(), "adatbeküldés sikeres");
-          dataRows.forEach(element => {
-            element.isSent = 1;
-            this.daoCtx.Update(element);
+        try {
+
+          var res = await fetch(`${this.settings.url}/Control/CityMedia/Telemetry/Telemetry/AddTelemetryData/`, {
+            method: "POST"
+            , headers: {
+              Authorization: this.authorizationString
+              , "Content-Type": "application/json"
+            }
+            , body: JSON.stringify({ data: dataRows })
           });
+          if (res.ok) {
+            console.log((new Date()).toLocaleString(), "adatbeküldés sikeres");
+            dataRows.forEach(element => {
+              element.isSent = 1;
+              this.daoCtx.Update(element);
+            });
 
-          resolve(dataRows.length);
-
-        }).catch(error => {
-          var message = error.message;
-          if (error.response) {
-            message = JSON.parse(error.response.text).error_description;
-
+            resolve(dataRows.length);
+          } else {
+            var error = await res.json();
+            var message = error.error_description;
+            throw new Error(message);
           }
-          console.log((new Date()).toLocaleString(), "adatbeküldés sikertelen", message, this.settings.url);
+
+        } catch (error) {
+           console.log((new Date()).toLocaleString(), "adatbeküldés sikertelen", error.message, this.settings.url);
           // this.SendDataResult(dataRows.length, error);
           reject(error, dataRows.length);
-        });
+        }
+
 
       }).catch(error => {
-        
+
         reject(error);
       });
     });
@@ -1150,7 +1152,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
     for (var i in data) {
       let setting = await this.daoCtx.Get(Setting, { name: i });
-      if(i == "pin"){
+      if (i == "pin") {
         data[i] = crypto.createHash('sha256').update(data[i]).digest('hex');
         //0eb1598c2177c525be55821a360741593a0a7d2137e1ad5c38d2e32c3a54df4b
       }
