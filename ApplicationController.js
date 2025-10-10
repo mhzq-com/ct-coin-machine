@@ -946,6 +946,9 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
   async InfoChange() {
 
     var s = await this.GetSystemInfo();
+    
+    delete s.settings.pin;
+    delete s.settings.token;
 
     this.emit("infoChange", s);
 
