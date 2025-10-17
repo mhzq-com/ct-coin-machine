@@ -21,6 +21,11 @@ function initializeSocketClient(settings){
     // var socket = socketioClient(settings.socketUrl, { query: { room: settings.serialNumber } });
     var socket = socketioClient(settings.socketUrl);
 
+    
+    socket.on("connect_error", (err) => {
+        console.log((new Date).toLocaleString(), "Socket.io connection error: ", err.message);
+    });
+
     socket.on("update", async (data, cb) => {
 
         try {
