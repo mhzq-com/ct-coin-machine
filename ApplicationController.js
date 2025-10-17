@@ -936,7 +936,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
 
   async GetSystemInfo() {
     var s = { package: pjson };
-    s.settings = Object.assign(this.settings);
+    s.settings = {...this.settings};
     var salesCount = await this.GetSalesCount();
     var salesCountAfterLastFillUp = await this.GetSalesAfterLastFillUp();
     s.salesInfo = { coinCount: this.coinCount, salesCount: salesCount, salesCountAfterLastFillUp: salesCountAfterLastFillUp };
@@ -1166,6 +1166,7 @@ AND logType = 'sales'`, [data.dateFrom, data.dateTo]);
       await this.daoCtx.Update(setting);
     }
 
+    console.log(this.settings);
     this.authorizationString = "Bearer " + this.settings.token.substr(0, 36) + "_" + this.settings.serialNumber;
 
     return this.settings;
